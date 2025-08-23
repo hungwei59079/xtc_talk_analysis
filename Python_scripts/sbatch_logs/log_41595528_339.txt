@@ -1,0 +1,17 @@
+Wed 13 Aug 2025 07:09:19 AM PDT
+nid004128
+Running xtalk_batch.py on task 339
+Trigger extraction complete for j1=33 (raw 1113605); #events=12750.
+Exception at (33, 90) with raw_ids (1113605, 1086405): index 90 is out of bounds for axis 0 with size 90
+Skipping (33, 91) due to victim raw_id 1088000 in skipped_channels.
+Exception at (33, 92) with raw_ids (1113605, 1088001): index 92 is out of bounds for axis 0 with size 90
+Exception at (33, 93) with raw_ids (1113605, 1088002): index 93 is out of bounds for axis 0 with size 90
+Exception at (33, 94) with raw_ids (1113605, 1088003): index 94 is out of bounds for axis 0 with size 90
+Skipping (33, 95) due to victim raw_id 1088004 in skipped_channels.
+Exception at (33, 96) with raw_ids (1113605, 1089600): index 96 is out of bounds for axis 0 with size 90
+Exception at (33, 97) with raw_ids (1113605, 1089601): index 97 is out of bounds for axis 0 with size 90
+Skipping (33, 98) due to victim raw_id 1089602 in skipped_channels.
+Exception at (33, 99) with raw_ids (1113605, 1089603): index 99 is out of bounds for axis 0 with size 90
+Skipping (33, 100) due to victim raw_id 1089604 in skipped_channels.
+Done.
+Wed 13 Aug 2025 09:18:05 AM PDT

@@ -1,0 +1,8 @@
+Fri 15 Aug 2025 01:09:32 AM PDT
+nid004141
+Running xtalk_batch.py on task 226
+Trigger extraction complete for j1=22 (raw 1112000); #events=8584.
+Skipping (22, 64) due to victim raw_id 1080002 in skipped_channels.
+Skipping (22, 65) due to victim raw_id 1080003 in skipped_channels.
+Done.
+Fri 15 Aug 2025 02:12:48 AM PDT

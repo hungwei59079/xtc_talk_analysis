@@ -1,0 +1,6 @@
+Fri 15 Aug 2025 01:00:13 AM PDT
+nid004112
+Running xtalk_batch.py on task 150
+Trigger extraction complete for j1=15 (raw 1108802); #events=7236.
+Done.
+Fri 15 Aug 2025 02:15:03 AM PDT

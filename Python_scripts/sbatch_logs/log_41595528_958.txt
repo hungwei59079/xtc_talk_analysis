@@ -1,0 +1,6 @@
+Wed 13 Aug 2025 10:49:13 AM PDT
+nid004086
+Running xtalk_batch.py on task 958
+Trigger channel j1=95 (raw 1088004) is in skipped_channels; writing NaNs for j2 in [80, 89].
+Done.
+Wed 13 Aug 2025 10:50:54 AM PDT
