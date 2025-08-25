@@ -2,13 +2,23 @@ import os
 import numpy as np
 from lgdo import lh5
 from dbetto import TextDB, Props
+import json
+
+def load_config():
+    # Get repo root (two levels up from this script)
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    config_path = os.path.join(repo_root, "xtc_config.json")
+    
+    with open(config_path) as f:
+        return json.load(f)
 
 def files_and_chnid():
     """
     Currently it's a copy and paste. Might include logic in future update.
     """
     period, run = "p08", "r015"
-    xtc_dir = "/global/cfs/cdirs/m2676/data/lngs/l200/scratch/crosstalk_data/xtc"
+    config = load_config()
+    xtc_dir = config["xtc_dir"]
     lmeta = TextDB(path=f"{xtc_dir}/inputs")
 
     valid_file = f"{xtc_dir}/generated/par/valid_keys/l200-{period}-{run}-valid_xtc.json"
