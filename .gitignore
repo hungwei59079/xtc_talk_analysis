@@ -1,2 +1,10 @@
-# Ignore config file with machine-specific paths
+# Machine-specific config
 xtc_config.json
+
+# Ignore Jupyter autosave checkpoints everywhere
+.ipynb_checkpoints/
+
+# Ignore intermediate batch processing outputs
+matrix_elements/
+Python_scripts/sbatch_logs/
+
