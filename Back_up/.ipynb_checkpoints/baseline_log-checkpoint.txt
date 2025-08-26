@@ -1,8 +1,0 @@
-Traceback (most recent call last):
-  File "/global/u2/h/hungwei/xtc_talk_analysis/prepare_baseline.py", line 5, in <module>
-    baseline_energy = get_baseline_energy(chn_id)
-                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/global/u2/h/hungwei/xtc_talk_analysis/self_defined_functions.py", line 120, in get_baseline_energy
-    files=new_hit_list,
-          ^^^^^^^^^^^^
-NameError: name 'new_hit_list' is not defined

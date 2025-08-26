@@ -1,3 +1,0 @@
-Wed 20 Aug 2025 10:59:20 PM PDT
-nid004080
-Running xtalk_batch.py on task 423

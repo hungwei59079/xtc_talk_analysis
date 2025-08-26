@@ -1,6 +1,0 @@
-Thu 21 Aug 2025 09:26:25 PM PDT
-nid004078
-Running xtalk_batch.py on task 18
-Trigger extraction complete for j1=1 (raw 1104001); #events=3108.
-Done.
-Thu 21 Aug 2025 09:45:15 PM PDT

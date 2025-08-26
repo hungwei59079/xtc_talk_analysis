@@ -1,7 +1,0 @@
-Wed 13 Aug 2025 10:14:27 AM PDT
-nid004128
-Running xtalk_batch.py on task 828
-Trigger extraction complete for j1=82 (raw 1084802); #events=1203.
-Self-interaction at (82, 82) ignored.
-Done.
-Wed 13 Aug 2025 11:13:38 AM PDT
