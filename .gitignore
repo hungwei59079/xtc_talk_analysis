@@ -8,3 +8,6 @@ xtc_config.json
 matrix_elements/
 Python_scripts/sbatch_logs/
 
+# Ignore Python cache
+__pycache__/
+*.pyc
