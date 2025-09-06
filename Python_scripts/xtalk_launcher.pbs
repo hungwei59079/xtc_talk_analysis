@@ -1,0 +1,16 @@
+#!/bin/bash
+#PBS -N xtalk_launcher
+#PBS -l walltime=00:10:00
+#PBS -l select=1:ncpus=1:mem=1gb
+#PBS -q legend
+
+exec > $PBS_O_WORKDIR/launcher_log.txt 2>&1
+cd $PBS_O_WORKDIR || exit 1
+
+# Directory for logs
+mkdir -p $PBS_O_WORKDIR/qsub_logs
+
+# Number of "array elements" (0..100)
+for i in $(seq 0 100); do
+    qsub -v MYID=$i $PBS_O_WORKDIR/xtalk_singlejob.pbs
+done
