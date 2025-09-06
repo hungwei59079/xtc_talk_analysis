@@ -9,4 +9,7 @@ matrix_elements/
 Python_scripts/sbatch_logs/
 Python_scripts/qsub_logs/
 
-__pycache__
+# Ignore Python cache
+__pycache__/
+*.pyc
+
