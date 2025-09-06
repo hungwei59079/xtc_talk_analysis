@@ -7,7 +7,9 @@ xtc_config.json
 # Ignore intermediate batch processing outputs
 matrix_elements/
 Python_scripts/sbatch_logs/
+Python_scripts/qsub_logs/
 
 # Ignore Python cache
 __pycache__/
 *.pyc
+

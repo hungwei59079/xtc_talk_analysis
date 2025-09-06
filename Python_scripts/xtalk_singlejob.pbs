@@ -1,0 +1,37 @@
+#!/bin/bash
+#PBS -N xtalk_job
+#PBS -l walltime=12:00:00
+#PBS -l select=1:ncpus=1:mem=2gb
+#PBS -q legend
+#PBS -o Idontcare.txt
+#PBS -e Idontcare.txt
+
+cd $PBS_O_WORKDIR || { echo "cd failed"; exit 1; }
+
+# Manual logging
+mkdir -p $PBS_O_WORKDIR/qsub_logs
+exec > $PBS_O_WORKDIR/qsub_logs/job_${MYID}_${PBS_JOBID}.log 2>&1
+
+echo "=================================================="
+echo " Job MYID=$MYID on host $(hostname)"
+echo " Started at $(date)"
+echo " PBS_JOBID = $PBS_JOBID"
+echo " Working dir: $(pwd)"
+echo "=================================================="
+
+# Compute starting and ending task index for this job
+start=$(( MYID * 10 ))
+end=$(( start + 9 ))
+
+echo "Handling tasks $start to $end"
+
+for i in $(seq $start $end); do
+    echo ">>> Running xtalk_batch.py $i at $(date)"
+    apptainer exec /data1/shared/software/apptainer/legendexp_legend-software_latest.sif python xtalk_batch.py $i
+    status=$?
+    echo "<<< Finished xtalk_batch.py $i with exit code $status at $(date)"
+done
+
+echo "=================================================="
+echo " Job $MYID finished at $(date)"
+echo "=================================================="
