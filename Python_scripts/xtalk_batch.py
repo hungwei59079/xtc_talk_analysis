@@ -5,6 +5,7 @@ import os
 import numpy as np
 from lgdo import lh5
 from self_defined_functions import files_and_chnid, relevant_events, xtalk_element
+import matplotlib.pyplot as plt
 
 # ---------- Setup ----------
 new_hit_list, new_dsp_list, chn_id = files_and_chnid()
@@ -21,10 +22,18 @@ j1 = int(sys.argv[1])
 raw_id_1 = chn_id[j1]
 
 if raw_id_1 in skipped_channels:
-    print(f"Trigger channel j1={j1} (raw {raw_id_1}) is in skipped_channels; writing NaNs for all j2.")
+    print(f"Trigger channel j1={j1} (raw {raw_id_1}) is in skipped_channels; saving empty histograms for all j2.")
     for j2 in range(0, 101):
-        with open(f"matrix_elements/xtalk_{j1}_{j2}.txt", "w") as f:
-            f.write(f"{np.nan},{np.nan}\n")
+        out_base = f"histograms/xtalk_{j1}_{j2}"
+        np.savez_compressed(
+            out_base + ".npz",
+            neg_counts=np.array([], dtype=int),
+            neg_bins=np.array([]),
+            pos_counts=np.array([], dtype=int),
+            pos_bins=np.array([]),
+            neg_vals=np.array([]),
+            pos_vals=np.array([])
+        )
     sys.exit(0)
     
 #Trigger channel event extraction
@@ -45,10 +54,12 @@ except Exception as e:
     print(f"Exception occurred at trigger channel {j1} extraction.")
     trig_extract_complete = False
 
+NBINS = 100
+
 for j2 in range(0,101):
     raw_id_2 = chn_id[j2]
-    neg_matrix_element = np.nan
-    pos_matrix_element = np.nan
+    neg_vals = np.array([])
+    pos_vals = np.array([])
     
 # Skip if self-interaction or either channel is missing
     if raw_id_1 == raw_id_2:
@@ -65,11 +76,33 @@ for j2 in range(0,101):
         trapTmin_2 = table_2["trapTmin"].nda
         trapTmax_2 = table_2["trapTmax"].nda
 
-        neg_matrix_element = np.mean(xtalk_element(selected_trapTmax_1, trapTmin_2, baseline_energy[j2]))
-        pos_matrix_element = np.mean(xtalk_element(selected_trapTmax_1, trapTmax_2, baseline_energy[j2]))
+        neg_vals = np.asarray(xtalk_element(selected_trapTmax_1, trapTmin_2, baseline_energy[j2]))
+        pos_vals = np.asarray(xtalk_element(selected_trapTmax_1, trapTmax_2, baseline_energy[j2]))
 
-    # Save results (including skipped jobs with np.nan)
-    with open(f"matrix_elements/xtalk_{j1}_{j2}.txt", "w") as f:
-        f.write(f"{neg_matrix_element},{pos_matrix_element}\n")
-    
-    print(f"matrix element ({j1},{j2}) saving complete.")
+    # Build histograms (counts + bin edges). For empty arrays save empty arrays.
+    if neg_vals.size:
+        neg_counts, neg_bins = np.histogram(neg_vals, bins=NBINS, range=(-0.3,0.1))
+    else:
+        neg_counts = np.array([], dtype=int)
+        neg_bins = np.array([])
+
+    if pos_vals.size:
+        pos_counts, pos_bins = np.histogram(pos_vals, bins=NBINS, range=(-0.1,0.3))
+    else:
+        pos_counts = np.array([], dtype=int)
+        pos_bins = np.array([])
+
+    # Save histogram numeric data to compressed .npz
+    out_base = f"histograms/xtalk_{j1}_{j2}"
+    np.savez_compressed(
+        out_base + ".npz",
+        neg_counts=neg_counts,
+        neg_bins=neg_bins,
+        pos_counts=pos_counts,
+        pos_bins=pos_bins,
+        # also save raw values in case you later want to re-bin / inspect them
+        neg_vals=neg_vals,
+        pos_vals=pos_vals
+    )
+
+    print(f"histogram ({j1},{j2}) saved: {out_base}.npz.")
