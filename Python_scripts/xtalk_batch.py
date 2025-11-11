@@ -32,7 +32,6 @@ if raw_id_1 in skipped_channels:
             pos_counts=np.array([], dtype=int),
             pos_bins=np.array([]),
             neg_vals=np.array([]),
-            pos_vals=np.array([])
         )
     sys.exit(0)
     
@@ -54,7 +53,7 @@ except Exception as e:
     print(f"Exception occurred at trigger channel {j1} extraction.")
     trig_extract_complete = False
 
-NBINS = 100
+NBINS = 700
 
 for j2 in range(0,101):
     raw_id_2 = chn_id[j2]
@@ -81,13 +80,13 @@ for j2 in range(0,101):
 
     # Build histograms (counts + bin edges). For empty arrays save empty arrays.
     if neg_vals.size:
-        neg_counts, neg_bins = np.histogram(neg_vals, bins=NBINS, range=(-0.3,0.1))
+        neg_counts, neg_bins = np.histogram(neg_vals, bins=NBINS, range=(min(neg_vals),0.5))
     else:
         neg_counts = np.array([], dtype=int)
         neg_bins = np.array([])
 
     if pos_vals.size:
-        pos_counts, pos_bins = np.histogram(pos_vals, bins=NBINS, range=(-0.1,0.3))
+        pos_counts, pos_bins = np.histogram(pos_vals, bins=NBINS, range=(-0.5,max(pos_vals)))
     else:
         pos_counts = np.array([], dtype=int)
         pos_bins = np.array([])
