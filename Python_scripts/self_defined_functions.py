@@ -163,8 +163,8 @@ def xtalk_element(E_trig, E_response, baseline_value):
         if len(E_trig) != len(E_response):
             raise ValueError("E_trig and E_response must have the same length.")
         baseline = np.full(len(E_trig), baseline_value)
-        #return (E_response - baseline) / E_trig * 100
-        return E_response / E_trig * 100
+        return (E_response - baseline) / E_trig * 100
+        # return E_response / E_trig * 100
     
     # Case 2: all inputs are scalars (numerical values)
     elif isinstance(E_trig, (int, float)) and isinstance(E_response, (int, float)):
