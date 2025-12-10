@@ -4,10 +4,11 @@ import os
 
 new_hit_list, new_dsp_list, chn_id = files_and_chnid()
 
-baseline_energy, skipped_channels = get_baseline_energy(new_hit_list, chn_id)
+positive_baseline, negative_baseline, skipped_channels = get_baseline_energy(new_hit_list, new_dsp_list, chn_id)
 
 os.chdir("../parameters")
-np.save("baseline_energy.npy", baseline_energy)
+np.save("positive_baseline.npy", positive_baseline)
+np.save("negative_baseline.npy", negative_baseline)
 
 # Optionally save the skipped channels
 if skipped_channels:

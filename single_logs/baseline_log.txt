@@ -1,3 +1,4 @@
+nohup: ignoring input
 ✅ Baseline energy evaluated for detector #0 (ID=1104000).
 ✅ Baseline energy evaluated for detector #1 (ID=1104001).
 ✅ Baseline energy evaluated for detector #2 (ID=1104002).

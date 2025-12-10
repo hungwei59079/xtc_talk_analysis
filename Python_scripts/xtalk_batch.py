@@ -13,7 +13,8 @@ print("File listing complete.")
 
 # Load parameters
 os.chdir("../parameters")
-baseline_energy = np.load("baseline_energy.npy")
+positive_baseline = np.load("positive_baseline.npy")
+negative_baseline = np.load("negative_baseline.npy")
 skipped_channels = set(np.load("skipped_channels.npy"))
 
 os.chdir("../")
@@ -75,18 +76,18 @@ for j2 in range(0,101):
         trapTmin_2 = table_2["trapTmin"].nda
         trapTmax_2 = table_2["trapTmax"].nda
 
-        neg_vals = np.asarray(xtalk_element(selected_trapTmax_1, trapTmin_2, baseline_energy[j2]))
-        pos_vals = np.asarray(xtalk_element(selected_trapTmax_1, trapTmax_2, baseline_energy[j2]))
+        neg_vals = np.asarray(xtalk_element(selected_trapTmax_1, trapTmin_2, negative_baseline[j2]))
+        pos_vals = np.asarray(xtalk_element(selected_trapTmax_1, trapTmax_2, positive_baseline[j2]))
 
     # Build histograms (counts + bin edges). For empty arrays save empty arrays.
     if neg_vals.size:
-        neg_counts, neg_bins = np.histogram(neg_vals, bins=NBINS, range=(min(neg_vals),0.5))
+        neg_counts, neg_bins = np.histogram(neg_vals, bins=NBINS, range=(max(min(neg_vals), -5),0.5))
     else:
         neg_counts = np.array([], dtype=int)
         neg_bins = np.array([])
 
     if pos_vals.size:
-        pos_counts, pos_bins = np.histogram(pos_vals, bins=NBINS, range=(-0.5,max(pos_vals)))
+        pos_counts, pos_bins = np.histogram(pos_vals, bins=NBINS, range=(-0.5,min(max(pos_vals), 5)))
     else:
         pos_counts = np.array([], dtype=int)
         pos_bins = np.array([])
