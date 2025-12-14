@@ -5,10 +5,7 @@ xtc_config.json
 .ipynb_checkpoints/
 
 # Ignore intermediate batch processing outputs
-matrix_elements/
-histograms/
-histograms_with_fixed_range/
-fit_results/
+temp_results/
 Python_scripts/sbatch_logs/
 Python_scripts/qsub_logs/
 
