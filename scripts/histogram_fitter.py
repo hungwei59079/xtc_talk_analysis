@@ -11,6 +11,7 @@ j1 = int(sys.argv[1])
 REPO_ROOT = Path(__file__).resolve().parents[1]
 IN_DIR = REPO_ROOT / "temp_results" / "histograms"
 OUT_DIR = REPO_ROOT / "temp_results" / "fit_results"
+OUT_DIR.mkdir(parents=True, exist_ok=True)
 # out_dir_figs = os.path.join(base_dir, "../fit_figures")
 
 def gaussian(x, A, mu, sigma):
