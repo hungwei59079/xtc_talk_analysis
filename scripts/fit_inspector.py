@@ -13,7 +13,9 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-reason_dict = {"low_stats" : "low_stats",
+reason_dict = {None : None,
+               "no_stats" : "no_stats",
+               "low_stats" : "low_stats",
               "delta" : "Optimal parameters not found: Number of calls to function has reached maxfev = 800.",
               "sharp" : "ok but with insufficient points"}
 actual_reason = reason_dict[args.reason]
@@ -115,3 +117,9 @@ plt.ylabel('Trigger Channel Index')
 plt.title('Positive Crosstalk Matrix Heatmap')
 plt.tight_layout()
 plt.savefig(OUT_DIR / "Pos_xtk_map_fitted.png")
+
+if actual_reason:
+    print("negative fail list:\n")
+    print(neg_fail_list)
+    print("positive fail list:\n")
+    print(pos_fail_list)

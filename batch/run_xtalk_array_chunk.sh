@@ -6,7 +6,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=1
-#SBATCH --array=0-100%101
+#SBATCH --array=57-58%2
 #SBATCH -q shared
 #SBATCH -C cpu
 #SBATCH -A m2676

@@ -33,16 +33,25 @@ for j2 in range(101):
 
     for label, counts, bins in [("neg", neg_counts, neg_bins), ("pos", pos_counts, pos_bins)]:
         total_events = np.sum(counts)
-        if total_events < 100:
-            # Too few events to fit reliably
-            result = dict(success=False, reason="low_stats", A=np.nan, mu=np.nan, sigma=np.nan, total_events=total_events)
+        if total_events == 0:
+            # No event at all, skipping.
+            result = dict(success=False, reason="no_stats", A=np.nan, mu=np.nan, sigma=np.nan, total_events=total_events)
             np.savez(OUT_DIR / f"fit_{label}_{j1}_{j2}.npz", **result)
-            print(f"{label}_{j1}_{j2} has low_stats")
+            print(f"{label}_{j1}_{j2} has no stats")
             continue
-
+            
         x = 0.5 * (bins[1:] + bins[:-1])
         y = counts
 
+        if total_events < 100:
+            # Too few stats to fit with Gaussian, trace back to taking mean.
+            mu = np.sum(x * y) / total_events
+            sigma = np.sqrt(np.sum(y * (x - mu)**2) / total_events)
+            result = dict(success=True, reason="low_stats", A=np.nan, mu=mu, sigma=sigma, total_events=total_events)
+            np.savez(OUT_DIR / f"fit_{label}_{j1}_{j2}.npz", **result)
+            print(f"{label}_{j1}_{j2} has low stats, tracing back to taking mean.")
+            continue          
+                        
         # Smooth counts to avoid spikes due to noise
         smooth_y = uniform_filter1d(y, size=3)
         peak_idx = np.argmax(smooth_y)
