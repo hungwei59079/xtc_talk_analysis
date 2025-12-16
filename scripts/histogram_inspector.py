@@ -19,11 +19,21 @@ parser.add_argument(
     default="neg",
     help="neg or pos",
 )
+parser.add_argument(
+    "--min",
+    help="min for visualized histogram"
+)
+parser.add_argument(
+    "--max",
+    help="max for visualized histogram"
+)
 args = parser.parse_args()
 
 j1 = args.j1
 j2 = args.j2
 label = args.label
+xmin = float(args.min) if args.min is not None else None
+xmax = float(args.max) if args.max is not None else None
 
 def gaussian(x, A, mu, sigma):
     return A * np.exp(-(x - mu)**2 / (2 * sigma**2))
@@ -71,6 +81,22 @@ if not success:
     plt.show()
     plt.savefig(OUT_DIR / f"{label}_histogram_{j1},{j2}_.png")
     sys.exit(0)
+
+# Apply x-range restriction if requested
+if xmin is not None or xmax is not None:
+    mask_range = np.ones_like(x, dtype=bool)
+    if xmin is not None:
+        mask_range &= (x >= xmin)
+    if xmax is not None:
+        mask_range &= (x <= xmax)
+
+    # Apply mask to histogram values
+    x = x[mask_range]
+    y = y[mask_range]
+
+    # bins has length N+1; select corresponding edges
+    idx = np.where(mask_range)[0]
+    bins = bins[idx[0] : idx[-1] + 2]
 
 mask = y > 0.05 * np.max(y)
 x_fit = x[mask]
