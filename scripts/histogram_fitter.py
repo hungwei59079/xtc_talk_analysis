@@ -4,19 +4,21 @@ import numpy as np
 import sys
 from scipy.optimize import curve_fit
 from scipy.ndimage import uniform_filter1d
+from pathlib import Path
 
 j1 = int(sys.argv[1])
 
-base_dir = os.getcwd() 
-in_dir = os.path.join(base_dir, "../histograms")
-out_dir = os.path.join(base_dir, "../fit_results")
+REPO_ROOT = Path(__file__).resolve().parents[1]
+IN_DIR = REPO_ROOT / "temp_results" / "histograms"
+OUT_DIR = REPO_ROOT / "temp_results" / "fit_results"
+OUT_DIR.mkdir(parents=True, exist_ok=True)
 # out_dir_figs = os.path.join(base_dir, "../fit_figures")
 
 def gaussian(x, A, mu, sigma):
     return A * np.exp(-(x - mu)**2 / (2 * sigma**2))
 
 for j2 in range(101):
-    npz_path = os.path.join(in_dir, f"xtalk_{j1}_{j2}.npz")
+    npz_path = IN_DIR / f"xtalk_{j1}_{j2}.npz"
 
     with np.load(npz_path) as data:
         neg_counts = data["neg_counts"]
@@ -31,16 +33,25 @@ for j2 in range(101):
 
     for label, counts, bins in [("neg", neg_counts, neg_bins), ("pos", pos_counts, pos_bins)]:
         total_events = np.sum(counts)
-        if total_events < 100:
-            # Too few events to fit reliably
-            result = dict(success=False, reason="low_stats", A=np.nan, mu=np.nan, sigma=np.nan, total_events=total_events)
-            np.savez(os.path.join(out_dir, f"fit_{label}_{j1}_{j2}.npz"), **result)
-            print(f"{label}_{j1}_{j2} has low_stats")
+        if total_events == 0:
+            # No event at all, skipping.
+            result = dict(success=False, reason="no_stats", A=np.nan, mu=np.nan, sigma=np.nan, total_events=total_events)
+            np.savez(OUT_DIR / f"fit_{label}_{j1}_{j2}.npz", **result)
+            print(f"{label}_{j1}_{j2} has no stats")
             continue
-
+            
         x = 0.5 * (bins[1:] + bins[:-1])
         y = counts
 
+        if total_events < 100:
+            # Too few stats to fit with Gaussian, trace back to taking mean.
+            mu = np.sum(x * y) / total_events
+            sigma = np.sqrt(np.sum(y * (x - mu)**2) / total_events)
+            result = dict(success=True, reason="low_stats", A=np.nan, mu=mu, sigma=sigma, total_events=total_events)
+            np.savez(OUT_DIR / f"fit_{label}_{j1}_{j2}.npz", **result)
+            print(f"{label}_{j1}_{j2} has low stats, tracing back to taking mean.")
+            continue          
+                        
         # Smooth counts to avoid spikes due to noise
         smooth_y = uniform_filter1d(y, size=3)
         peak_idx = np.argmax(smooth_y)
@@ -88,20 +99,4 @@ for j2 in range(101):
 
         # Save results
         result = dict(success=success, reason=reason, A=A, mu=mu, sigma=sigma, total_events=total_events)
-        np.savez(os.path.join(out_dir, f"fit_{label}_{j1}_{j2}.npz"), **result)
-
-        # the following is to be removed
-        #if success:
-        #    plt.figure()
-        #    plt.bar(x, y, width=np.diff(bins), alpha=0.5, label=f"data (N={total_events})")
-        #    x_dense = np.linspace(min(x_fit), max(x_fit), 300)
-        #    plt.plot(
-        #        x_dense,
-        #        gaussian(x_dense, *popt),
-        #        'r-',
-        #        label=f"Fit μ={mu:.3f}, σ={sigma:.3f}"
-         #   )
-        #    plt.title(f"{label} histogram j1={j1}, j2={j2}")
-        #    plt.legend()
-         #   plt.savefig(os.path.join(out_dir_figs, f"fit_{label}_{j1}_{j2}.png"))
-         #   plt.show()
+        np.savez(OUT_DIR / f"fit_{label}_{j1}_{j2}.npz", **result)

@@ -4,20 +4,23 @@ import sys
 import os
 import numpy as np
 from lgdo import lh5
-from self_defined_functions import files_and_chnid, relevant_events, xtalk_element
+from xtc_utils import files_and_chnid, relevant_events, xtalk_element
 import matplotlib.pyplot as plt
+from pathlib import Path
 
 # ---------- Setup ----------
-new_hit_list, new_dsp_list, chn_id = files_and_chnid()
+REPO_ROOT = Path(__file__).resolve().parents[1]
+CONFIG_PATH = REPO_ROOT / "xtc_config.json"
+PARAMS_PATH = REPO_ROOT / "temp_results"/ "parameters"
+OUTDIR = REPO_ROOT / "temp_results" / "histograms"
+OUTDIR.mkdir(parents=True, exist_ok=True)
+new_hit_list, new_dsp_list, chn_id = files_and_chnid(CONFIG_PATH)
 print("File listing complete.")
 
 # Load parameters
-os.chdir("../parameters")
-positive_baseline = np.load("positive_baseline.npy")
-negative_baseline = np.load("negative_baseline.npy")
-skipped_channels = set(np.load("skipped_channels.npy"))
-
-os.chdir("../")
+positive_baseline = np.load(PARAMS_PATH / "positive_baseline.npy")
+negative_baseline = np.load(PARAMS_PATH / "negative_baseline.npy")
+skipped_channels = set(np.load(PARAMS_PATH / "skipped_channels.npy"))
 
 j1 = int(sys.argv[1])
 raw_id_1 = chn_id[j1]
@@ -25,9 +28,9 @@ raw_id_1 = chn_id[j1]
 if raw_id_1 in skipped_channels:
     print(f"Trigger channel j1={j1} (raw {raw_id_1}) is in skipped_channels; saving empty histograms for all j2.")
     for j2 in range(0, 101):
-        out_base = f"histograms/xtalk_{j1}_{j2}"
+        out_path = OUTDIR / f"xtalk_{j1}_{j2}.npz"
         np.savez_compressed(
-            out_base + ".npz",
+            out_path,
             neg_counts=np.array([], dtype=int),
             neg_bins=np.array([]),
             pos_counts=np.array([], dtype=int),
@@ -93,9 +96,9 @@ for j2 in range(0,101):
         pos_bins = np.array([])
 
     # Save histogram numeric data to compressed .npz
-    out_base = f"histograms/xtalk_{j1}_{j2}"
+    out_path = OUTDIR / f"xtalk_{j1}_{j2}.npz"
     np.savez_compressed(
-        out_base + ".npz",
+        out_path,
         neg_counts=neg_counts,
         neg_bins=neg_bins,
         pos_counts=pos_counts,
@@ -105,4 +108,4 @@ for j2 in range(0,101):
         pos_vals=pos_vals
     )
 
-    print(f"histogram ({j1},{j2}) saved: {out_base}.npz.")
+    print(f"histogram ({j1},{j2}) saved: {out_path}.")

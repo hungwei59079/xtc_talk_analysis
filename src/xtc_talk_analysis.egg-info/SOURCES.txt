@@ -1,0 +1,7 @@
+pyproject.toml
+src/xtc_talk_analysis.egg-info/PKG-INFO
+src/xtc_talk_analysis.egg-info/SOURCES.txt
+src/xtc_talk_analysis.egg-info/dependency_links.txt
+src/xtc_talk_analysis.egg-info/top_level.txt
+src/xtc_utils/__init__.py
+src/xtc_utils/self_defined_functions.py
