@@ -47,7 +47,7 @@ for j2 in range(101):
             # Too few stats to fit with Gaussian, trace back to taking mean.
             mu = np.sum(x * y) / total_events
             sigma = np.sqrt(np.sum(y * (x - mu)**2) / total_events)
-            result = dict(success=True, reason="low_stats", A=np.nan, mu=mu, sigma=sigma, total_events=total_events)
+            result = dict(success=False, reason="low_stats", A=np.nan, mu=mu, sigma=sigma, total_events=total_events)
             np.savez(OUT_DIR / f"fit_{label}_{j1}_{j2}.npz", **result)
             print(f"{label}_{j1}_{j2} has low stats, tracing back to taking mean.")
             continue          
