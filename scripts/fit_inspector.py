@@ -90,7 +90,7 @@ cbar.set_label('Negative Xtalk Value (%)')
 # Axis labels
 plt.xlabel('Response Channel Index')
 plt.ylabel('Trigger Channel Index')
-plt.title('Negative Crosstalk Matrix Heatmap (No baseline)')
+plt.title('Negative Crosstalk Matrix Heatmap')
 
 # Save & display
 plt.tight_layout()

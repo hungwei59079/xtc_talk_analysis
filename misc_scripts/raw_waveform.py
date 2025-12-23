@@ -111,37 +111,41 @@ secondary_selection = (energy_2 < 100)
 secondary_idxs = idxs[secondary_selection]
 print("secondary selection complete.")
 
-raw_waveform_table_1 = lh5.read(f"ch{raw_id_1}/raw/waveform_windowed", raw_list, idx=secondary_idxs)
-raw_waveform_table_2 = lh5.read(f"ch{raw_id_2}/raw/waveform_windowed", raw_list, idx=secondary_idxs)
+table_1 = lh5.read(f"ch{raw_id_1}/raw/", raw_list, idx=secondary_idxs, field_mask=["waveform_windowed","baseline"])
+table_2 = lh5.read(f"ch{raw_id_2}/raw/", raw_list, idx=secondary_idxs, field_mask=["waveform_windowed","baseline"])
+raw_waveform_table_1 = table_1["waveform_windowed"]
+baseline_1 = table_1["baseline"]
+raw_waveform_table_2 = table_2["waveform_windowed"]
+baseline_2 = table_2["baseline"]
 raw_waveform_1 = raw_waveform_table_1.values.nda
 raw_waveform_2 = raw_waveform_table_2.values.nda
 
 print(f"Generating plots for {len(raw_waveform_1)} events...")
 
 for i in range(len(raw_waveform_1)):
-    if i > 50:
+    if i > 5:
         break
     # Extract specific waveforms for this event
-    adc_1 = raw_waveform_1[i]
-    adc_2 = raw_waveform_2[i]
+    adc_1 = raw_waveform_1[i] - np.full(len(raw_waveform_1[i]),baseline_1[i])
+    adc_2 = raw_waveform_2[i] - np.full(len(raw_waveform_2[i]),baseline_2[i])
     
     # Create x-axis (sample indices)
-    x = np.arange(len(adc_1))
+    x = np.linspace(0, 0.016*len(adc_1) ,len(adc_1))
     
     # Create a canvas with 2 subplots (2 rows, 1 column)
     # sharex=True ensures both plots have the same time window
-    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8), sharex=True)
+    fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(6, 8), sharex=True)
     
     # Plot first waveform (e.g., from raw_waveform_1)
-    ax1.plot(x, adc_1, label=f"Waveform 1 - Event {i}", color="blue", linewidth=1)
+    ax1.plot(x, adc_1, label=f"Trigger Waveform - Event {i}", color="blue", linewidth=1)
     ax1.set_ylabel("ADC")
     ax1.legend(loc="upper right")
     ax1.grid(True, linestyle="--", alpha=0.6)
     
     # Plot second waveform (e.g., from raw_waveform_2)
-    ax2.plot(x, adc_2, label=f"Waveform 2 - Event {i}", color="red", linewidth=1)
+    ax2.plot(x, adc_2, label=f"Response Waveform - Event {i}", color="red", linewidth=1)
     ax2.set_ylabel("ADC")
-    ax2.set_xlabel("Sample Index")
+    ax2.set_xlabel("Time(μs)")
     ax2.legend(loc="upper right")
     ax2.grid(True, linestyle="--", alpha=0.6)
     
