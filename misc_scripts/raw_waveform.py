@@ -7,6 +7,26 @@ from lgdo import lh5
 from pathlib import Path
 from xtc_utils import files_and_chnid, relevant_events
 
+def trapezoidal_filter(x, T, G):
+    # moving sum (integral)
+    cumsum = np.cumsum(x)
+    
+    # helper to safely subtract cumsums
+    def window_sum(a, b):
+        if b >= 0:
+            return cumsum[b] - (cumsum[a] if a >= 0 else 0)
+        else:
+            return 0
+    
+    y = np.zeros_like(x)
+    
+    for i in range(len(x)):
+        s1 = window_sum(i-T, i)
+        s2 = window_sum(i-T-G, i-G)
+        y[i] = s1 - s2
+    
+    return y / T
+
 parser = argparse.ArgumentParser()
 parser.add_argument(
     "j1", 
@@ -39,6 +59,13 @@ for path in new_hit_list:
     raw_path = raw_dir + raw_file
     raw_list.append(raw_path)
 print("raw data file list construction is complete.")
+
+# Test purpose - simply trying to get an example waveform
+raw_list = raw_list[0:2]
+new_hit_list = new_hit_list[0:2]
+print(raw_list)
+
+
 
 """
 print(f"Checking {len(new_hit_list)} file pairs for event count consistency...")
@@ -75,6 +102,8 @@ else:
 
 raw_id_1 = chn_id[j1]
 raw_id_2 = chn_id[j2]
+print(f"response channel name: {raw_id_1}")
+print(f"response channel name: {raw_id_2}")
 
 if raw_id_1 in skipped_channels:
     print(f"Trigger channel j1={j1} (raw {raw_id_1}) is in skipped_channels; Change a trigger channel.")
@@ -87,22 +116,24 @@ if raw_id_1 == raw_id_2:
     sys.exit(0)
 
 #Trigger channel event extraction
-try:
-    energy_1, idxs = relevant_events(
-        table_path=f"ch{raw_id_1}/hit/",
-        files=new_hit_list,
-        ene_dataset="cuspEmax_ctc_cal",
-        flag_datasets=["is_discharge", "is_valid_0vbb_old"],
-        conditions={"is_discharge": False, "is_valid_0vbb_old": True},
-        energy_range=(1500, 4500),
-        return_index=True
-    )
+energy_1, idxs = relevant_events(
+    table_path=f"ch{raw_id_1}/hit/",
+    files=new_hit_list,
+    ene_dataset="cuspEmax_ctc_cal",
+    flag_datasets=["is_discharge", "is_valid_0vbb_old"],
+    conditions={"is_discharge": False, "is_valid_0vbb_old": True},
+    energy_range=(1500, 4500),
+    return_index=True
+)
     # trapTmax_1 = lh5.read(f"ch{raw_id_1}/dsp/trapTmax", new_dsp_list, idx=idxs).nda
-    print("Trigger channel event extraction complete.")
-    trig_extract_complete = True
+print("Trigger channel event extraction complete.")
+trig_extract_complete = True
+"""
 except Exception as e:
     print(f"Exception occurred at trigger channel {j1} extraction: {e}")
     trig_extract_complete = False
+
+"""
 
     
 energy_2 = lh5.read(f"ch{raw_id_2}/hit/cuspEmax_ctc_cal", new_hit_list, idx=idxs).nda
@@ -110,6 +141,8 @@ print("response channel energy extraction complete.")
 secondary_selection = (energy_2 < 100)
 secondary_idxs = idxs[secondary_selection]
 print("secondary selection complete.")
+
+print(f"Example Index: {secondary_idxs[0]}")
 
 table_1 = lh5.read(f"ch{raw_id_1}/raw/", raw_list, idx=secondary_idxs, field_mask=["waveform_windowed","baseline"])
 table_2 = lh5.read(f"ch{raw_id_2}/raw/", raw_list, idx=secondary_idxs, field_mask=["waveform_windowed","baseline"])
@@ -121,6 +154,8 @@ raw_waveform_1 = raw_waveform_table_1.values.nda
 raw_waveform_2 = raw_waveform_table_2.values.nda
 
 print(f"Generating plots for {len(raw_waveform_1)} events...")
+T = 100
+G = 150
 
 for i in range(len(raw_waveform_1)):
     if i > 5:
@@ -128,6 +163,8 @@ for i in range(len(raw_waveform_1)):
     # Extract specific waveforms for this event
     adc_1 = raw_waveform_1[i] - np.full(len(raw_waveform_1[i]),baseline_1[i])
     adc_2 = raw_waveform_2[i] - np.full(len(raw_waveform_2[i]),baseline_2[i])
+    trap_1 = trapezoidal_filter(adc_1, T, G)
+    trap_2 = trapezoidal_filter(adc_2, T, G)
     
     # Create x-axis (sample indices)
     x = np.linspace(0, 0.016*len(adc_1) ,len(adc_1))
@@ -138,12 +175,14 @@ for i in range(len(raw_waveform_1)):
     
     # Plot first waveform (e.g., from raw_waveform_1)
     ax1.plot(x, adc_1, label=f"Trigger Waveform - Event {i}", color="blue", linewidth=1)
+    ax1.plot(x, trap_1, label=f"Filtered trigger Waveform - Event {i}", color="orange", linewidth=1)
     ax1.set_ylabel("ADC")
     ax1.legend(loc="upper right")
     ax1.grid(True, linestyle="--", alpha=0.6)
     
     # Plot second waveform (e.g., from raw_waveform_2)
-    ax2.plot(x, adc_2, label=f"Response Waveform - Event {i}", color="red", linewidth=1)
+    ax2.plot(x, adc_2, label=f"Response Waveform - Event {i}", color="blue", linewidth=1)
+    ax2.plot(x, trap_2, label=f"Filtered esponse Waveform - Event {i}", color="orange", linewidth=1)
     ax2.set_ylabel("ADC")
     ax2.set_xlabel("Time(μs)")
     ax2.legend(loc="upper right")
