@@ -5,8 +5,8 @@ from dbetto import TextDB, Props
 import json
 from pathlib import Path
 
-def files_and_chnid(config_path: Path):
-    period, run = "p08", "r015"
+def files_and_chnid(config_path: Path, config_name: str):
+    # period, run = "p08", "r015"
     with config_path.open() as f:
         config = json.load(f)
     xtc_dir = config["xtc_dir"]
