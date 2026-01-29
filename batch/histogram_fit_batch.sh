@@ -10,7 +10,6 @@
 #SBATCH -q shared
 #SBATCH -C cpu
 #SBATCH -A m2676
-#SBATCH --image=legendexp/legend-software:latest
 
 # -----------------------------
 # Setup
@@ -19,6 +18,8 @@
 # Always work from the repository root
 REPO_ROOT=$SLURM_SUBMIT_DIR
 cd "$REPO_ROOT" || exit 1
+
+source .venv/bin/activate
 
 mkdir -p logs
 
@@ -30,9 +31,7 @@ echo "Running histogram_fitter.py on task ${SLURM_ARRAY_TASK_ID}"
 # Run inside container
 # -----------------------------
 
-shifter python -m pip install --user -e .
-
-shifter python scripts/histogram_fitter.py "${SLURM_ARRAY_TASK_ID}"
+python scripts/histogram_fitter.py "${SLURM_ARRAY_TASK_ID}"
 
 echo "Done."
 date
