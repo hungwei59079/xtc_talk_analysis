@@ -2,10 +2,11 @@
   "xtc_old":{
 	  "xtc_dir": "/global/cfs/cdirs/m2676/data/lngs/l200/scratch/crosstalk_data/xtc",
 	  "period": "p08",
-`	  "runs": ["r015"]
+	  "runs": ["r015"]
   },
   "xtc_p16":{
 	  "xtc_dir": "/global/cfs/projectdirs/m2676/data/lngs/l200/public/prodenv/prod-blind/auto/v2.0.0",
 	  "period": "p16",
-	  "runs": "
+	  "runs": ["r008", "r009", "r010", "r011", "r012", "r013", "r014", "r015", "r016", "r017", "r018"]
+  }
 }
