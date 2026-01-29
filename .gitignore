@@ -7,7 +7,7 @@ xtc_config.json
 # Ignore intermediate batch processing outputs
 temp_results/
 logs/
-
+results/waveforms/
 # Ignore Python cache
 __pycache__/
 *.pyc
