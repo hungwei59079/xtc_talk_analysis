@@ -5,41 +5,60 @@ from dbetto import TextDB, Props
 import json
 from pathlib import Path
 
-def files_and_chnid(config_path: Path, config_name: str):
-    # period, run = "p08", "r015"
+def files_and_chnid(config_path: Path, config_name: str, data_dict: dict):
     with config_path.open() as f:
         config = json.load(f)
-    xtc_dir = config["xtc_dir"]
+    xtc_dir = config["datasets"][config_name]["xtc_dir"]
+    dsp_dir_template = config["datasets"][config_name]["path_templates"]["dsp_dir"]
+    hit_dir_template = config["datasets"][config_name]["path_templates"]["hit_dir"]
     lmeta = TextDB(path=f"{xtc_dir}/inputs")
+    new_hit_list = []
+    new_dsp_list = []
 
-    try:
-        valid_file = f"{xtc_dir}/generated/par/valid_keys/l200-{period}-{run}-valid_xtc.json"
-        valid_keys = list(Props.read_from(valid_file)["valid_keys"])
-        time_string = valid_keys[0].split("-")[-1]
-    
-        dsp_dir = f"{xtc_dir}/generated/tier/dsp/xtc/{period}/{run}"
-        hit_dir = f"{xtc_dir}/generated/tier/hit/xtc/{period}/{run}"
-        dsp_list = [f"{dsp_dir}/{key}-tier_dsp.lh5" for key in valid_keys]
-        hit_list = [f"{hit_dir}/{key}-tier_hit.lh5" for key in valid_keys]
-    
-        #The next part is to remove missing files from the list obtained from valid_xtc.json. Should be removed when moved to LNGS.
-    
-        listed_files = set(os.path.basename(f) for f in hit_list)
-        actual_files = set(os.listdir(hit_dir))
-        non_existent_files = listed_files - actual_files
-        new_hit_list = []
-        for f in hit_list:
-            if os.path.basename(f) not in non_existent_files:
-                new_hit_list.append(f)
-    
-        listed_files = set(os.path.basename(f) for f in dsp_list)
-        actual_files = set(os.listdir(dsp_dir))
-        non_existent_files = listed_files - actual_files
-        new_dsp_list = []
-        for f in dsp_list:
-            if os.path.basename(f) not in non_existent_files:
-                new_dsp_list.append(f)
+    for period in data_dict.keys():
+        for run in data_dict[period]:
+            if period not in config["datasets"][config_name]["periods"] or run not in config["datasets"][config_name]["periods"][period]:
+                raise ValueError(f"Period {period} or run {run} not found in configuration for {config_name}.")
+            dsp_dir = dsp_dir_template.format(period=period, run=run)
+            hit_dir = hit_dir_template.format(period=period, run=run)
 
+            try:
+                valid_file = f"{xtc_dir}/generated/par/valid_keys/l200-{period}-{run}-valid_xtc.json"
+                valid_keys = list(Props.read_from(valid_file)["valid_keys"])
+                time_string = valid_keys[0].split("-")[-1]
+            
+                dsp_list = [f"{dsp_dir}/{key}-tier_dsp.lh5" for key in valid_keys] #FIXME: this overwrites dsp_list and hit_list if multiple periods/runs are given
+                hit_list = [f"{hit_dir}/{key}-tier_hit.lh5" for key in valid_keys]
+            
+                # Remove non-existent files from the lists
+            
+                listed_files = set(os.path.basename(f) for f in hit_list)
+                actual_files = set(os.listdir(hit_dir))
+                non_existent_files = listed_files - actual_files
+                for f in hit_list:
+                    if os.path.basename(f) not in non_existent_files:
+                        new_hit_list.append(f)
+            
+                listed_files = set(os.path.basename(f) for f in dsp_list)
+                actual_files = set(os.listdir(dsp_dir))
+                non_existent_files = listed_files - actual_files
+                for f in dsp_list:
+                    if os.path.basename(f) not in non_existent_files:
+                        new_dsp_list.append(f)
+            except:
+                print("Could not find valid_xtc.json; using all files in hit and dsp directories.")
+                new_hit_list += [f"{hit_dir}/{f}" for f in os.listdir(hit_dir) if f.endswith(".lh5")]
+                new_dsp_list += [f"{dsp_dir}/{f}" for f in os.listdir(dsp_dir) if f.endswith(".lh5")]
+
+
+    #Check if timestrings match
+    hit_timestrings = [f.split("-")[-2] for f in new_hit_list]
+    dsp_timestrings = [f.split("-")[-2] for f in new_dsp_list]
+    print(hit_timestrings)
+    if set(hit_timestrings) != set(dsp_timestrings):
+        raise ValueError("Hit and DSP files have mismatched time strings.")
+    time_string = hit_timestrings[0]  #Assuming all files have the same timestring
+    
     #Now we can obtain the raw ids using the .on() utility.
     
     chmap = lmeta.hardware.configuration.channelmaps.on(time_string)
