@@ -12,32 +12,33 @@ def files_and_chnid(config_path: Path, config_name: str):
     xtc_dir = config["xtc_dir"]
     lmeta = TextDB(path=f"{xtc_dir}/inputs")
 
-    valid_file = f"{xtc_dir}/generated/par/valid_keys/l200-{period}-{run}-valid_xtc.json"
-    valid_keys = list(Props.read_from(valid_file)["valid_keys"])
-    time_string = valid_keys[0].split("-")[-1]
-
-    dsp_dir = f"{xtc_dir}/generated/tier/dsp/xtc/{period}/{run}"
-    hit_dir = f"{xtc_dir}/generated/tier/hit/xtc/{period}/{run}"
-    dsp_list = [f"{dsp_dir}/{key}-tier_dsp.lh5" for key in valid_keys]
-    hit_list = [f"{hit_dir}/{key}-tier_hit.lh5" for key in valid_keys]
-
-    #The next part is to remove missing files from the list obtained from valid_xtc.json. Should be removed when moved to LNGS.
-
-    listed_files = set(os.path.basename(f) for f in hit_list)
-    actual_files = set(os.listdir(hit_dir))
-    non_existent_files = listed_files - actual_files
-    new_hit_list = []
-    for f in hit_list:
-        if os.path.basename(f) not in non_existent_files:
-            new_hit_list.append(f)
-
-    listed_files = set(os.path.basename(f) for f in dsp_list)
-    actual_files = set(os.listdir(dsp_dir))
-    non_existent_files = listed_files - actual_files
-    new_dsp_list = []
-    for f in dsp_list:
-        if os.path.basename(f) not in non_existent_files:
-            new_dsp_list.append(f)
+    try:
+        valid_file = f"{xtc_dir}/generated/par/valid_keys/l200-{period}-{run}-valid_xtc.json"
+        valid_keys = list(Props.read_from(valid_file)["valid_keys"])
+        time_string = valid_keys[0].split("-")[-1]
+    
+        dsp_dir = f"{xtc_dir}/generated/tier/dsp/xtc/{period}/{run}"
+        hit_dir = f"{xtc_dir}/generated/tier/hit/xtc/{period}/{run}"
+        dsp_list = [f"{dsp_dir}/{key}-tier_dsp.lh5" for key in valid_keys]
+        hit_list = [f"{hit_dir}/{key}-tier_hit.lh5" for key in valid_keys]
+    
+        #The next part is to remove missing files from the list obtained from valid_xtc.json. Should be removed when moved to LNGS.
+    
+        listed_files = set(os.path.basename(f) for f in hit_list)
+        actual_files = set(os.listdir(hit_dir))
+        non_existent_files = listed_files - actual_files
+        new_hit_list = []
+        for f in hit_list:
+            if os.path.basename(f) not in non_existent_files:
+                new_hit_list.append(f)
+    
+        listed_files = set(os.path.basename(f) for f in dsp_list)
+        actual_files = set(os.listdir(dsp_dir))
+        non_existent_files = listed_files - actual_files
+        new_dsp_list = []
+        for f in dsp_list:
+            if os.path.basename(f) not in non_existent_files:
+                new_dsp_list.append(f)
 
     #Now we can obtain the raw ids using the .on() utility.
     
