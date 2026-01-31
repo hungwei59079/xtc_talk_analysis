@@ -19,8 +19,8 @@ def files_and_chnid(config_path: Path, config_name: str, data_dict: dict):
         for run in data_dict[period]:
             if period not in config["datasets"][config_name]["periods"] or run not in config["datasets"][config_name]["periods"][period]:
                 raise ValueError(f"Period {period} or run {run} not found in configuration for {config_name}.")
-            dsp_dir = dsp_dir_template.format(period=period, run=run)
-            hit_dir = hit_dir_template.format(period=period, run=run)
+            dsp_dir = dsp_dir_template.format(xtc_dir=xtc_dir, period=period, run=run)
+            hit_dir = hit_dir_template.format(xtc_dir=xtc_dir, period=period, run=run)
 
             try:
                 valid_file = f"{xtc_dir}/generated/par/valid_keys/l200-{period}-{run}-valid_xtc.json"
