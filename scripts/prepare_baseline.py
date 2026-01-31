@@ -5,7 +5,7 @@ from xtc_utils import files_and_chnid, get_baseline_energy
 REPO_ROOT = Path(__file__).resolve().parents[1]
 
 CONFIG_PATH = REPO_ROOT / "xtc_config.json"
-data_dict = {"p08": ["r015"]}
+data_dict = {"p08": ["r014","r015"]}
 OUTDIR = REPO_ROOT / "temp_results" / "parameters"
 
 OUTDIR.mkdir(parents=True, exist_ok=True)

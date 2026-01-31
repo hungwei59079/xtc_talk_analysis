@@ -17,10 +17,10 @@ def files_and_chnid(config_path: Path, config_name: str, data_dict: dict = None)
     if data_dict is not None:
         for period in data_dict.keys():
             if period not in full_data_dict.keys():
-                raise ValueError(f"Period {period} not found in configuration.")
+                print(f"Warning: Period {period} not found in configuration. It will be skipped.")
             for run in data_dict[period]:
                 if run not in full_data_dict[period]:
-                    raise ValueError(f"Run {run} not found in configuration for period {period}.")
+                    print(f"Warning: Run {run} not found in configuration for period {period}. It will be skipped.")
 
     lmeta = TextDB(path=f"{xtc_dir}/inputs")
     new_hit_list = []
@@ -33,6 +33,7 @@ def files_and_chnid(config_path: Path, config_name: str, data_dict: dict = None)
                     continue
                 if run not in data_dict[period]:
                     continue
+            print(f"searching for files for {period}, {run}......")
             dsp_dir = dsp_dir_template.format(xtc_dir=xtc_dir, period=period, run=run)
             hit_dir = hit_dir_template.format(xtc_dir=xtc_dir, period=period, run=run)
 
@@ -68,10 +69,10 @@ def files_and_chnid(config_path: Path, config_name: str, data_dict: dict = None)
     #Check if timestrings match
     hit_timestrings = [f.split("-")[-2] for f in new_hit_list]
     dsp_timestrings = [f.split("-")[-2] for f in new_dsp_list]
-    print(hit_timestrings)
+    # print(hit_timestrings)
     if set(hit_timestrings) != set(dsp_timestrings):
         raise ValueError("Hit and DSP files have mismatched time strings.")
-    time_string = hit_timestrings[0]  #Assuming all files have the same timestring
+    time_string = hit_timestrings[0] 
     
     #Now we can obtain the raw ids using the .on() utility.
     
