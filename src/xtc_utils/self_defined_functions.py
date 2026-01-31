@@ -5,20 +5,34 @@ from dbetto import TextDB, Props
 import json
 from pathlib import Path
 
-def files_and_chnid(config_path: Path, config_name: str, data_dict: dict):
+def files_and_chnid(config_path: Path, config_name: str, data_dict: dict = None):
     with config_path.open() as f:
         config = json.load(f)
     xtc_dir = config["datasets"][config_name]["xtc_dir"]
     dsp_dir_template = config["datasets"][config_name]["path_templates"]["dsp_dir"]
     hit_dir_template = config["datasets"][config_name]["path_templates"]["hit_dir"]
+    full_data_dict = config["datasets"][config_name]["periods"]
+
+    # check if all periods and runs in data_dict are in full_data_dict
+    if data_dict is not None:
+        for period in data_dict.keys():
+            if period not in full_data_dict.keys():
+                raise ValueError(f"Period {period} not found in configuration.")
+            for run in data_dict[period]:
+                if run not in full_data_dict[period]:
+                    raise ValueError(f"Run {run} not found in configuration for period {period}.")
+
     lmeta = TextDB(path=f"{xtc_dir}/inputs")
     new_hit_list = []
     new_dsp_list = []
 
-    for period in data_dict.keys():
-        for run in data_dict[period]:
-            if period not in config["datasets"][config_name]["periods"] or run not in config["datasets"][config_name]["periods"][period]:
-                raise ValueError(f"Period {period} or run {run} not found in configuration for {config_name}.")
+    for period in full_data_dict.keys():
+        for run in full_data_dict[period]:
+            if data_dict is not None:
+                if period not in data_dict.keys():
+                    continue
+                if run not in data_dict[period]:
+                    continue
             dsp_dir = dsp_dir_template.format(xtc_dir=xtc_dir, period=period, run=run)
             hit_dir = hit_dir_template.format(xtc_dir=xtc_dir, period=period, run=run)
 
