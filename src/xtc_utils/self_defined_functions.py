@@ -42,7 +42,7 @@ def files_and_chnid(config_path: Path, config_name: str, data_dict: dict = None)
                 valid_keys = list(Props.read_from(valid_file)["valid_keys"])
                 time_string = valid_keys[0].split("-")[-1]
             
-                dsp_list = [f"{dsp_dir}/{key}-tier_dsp.lh5" for key in valid_keys] #FIXME: this overwrites dsp_list and hit_list if multiple periods/runs are given
+                dsp_list = [f"{dsp_dir}/{key}-tier_dsp.lh5" for key in valid_keys] 
                 hit_list = [f"{hit_dir}/{key}-tier_hit.lh5" for key in valid_keys]
             
                 # Remove non-existent files from the lists
@@ -65,6 +65,33 @@ def files_and_chnid(config_path: Path, config_name: str, data_dict: dict = None)
                 new_hit_list += [f"{hit_dir}/{f}" for f in os.listdir(hit_dir) if f.endswith(".lh5")]
                 new_dsp_list += [f"{dsp_dir}/{f}" for f in os.listdir(dsp_dir) if f.endswith(".lh5")]
 
+    # Print summary of collected hit files
+    print(f"\n{'='*50}")
+    print(f"Summary of collected hit files:")
+    print(f"  Total number of files: {len(new_hit_list)}")
+    
+    # Extract periods and runs from file paths
+    periods_runs = {}
+    for f in new_hit_list:
+        # Parse the path to extract period and run (e.g., .../p10/r005/...)
+        parts = f.split('/')
+        for i, part in enumerate(parts):
+            if part.startswith('p') and part[1:].isdigit():
+                period = part
+                if i + 1 < len(parts) and parts[i + 1].startswith('r'):
+                    run = parts[i + 1]
+                    if period not in periods_runs:
+                        periods_runs[period] = {}
+                    if run not in periods_runs[period]:
+                        periods_runs[period][run] = 0
+                    periods_runs[period][run] += 1
+                break
+    
+    print(f"  Periods and runs included:")
+    for period in sorted(periods_runs.keys()):
+        runs_info = ", ".join([f"{run} ({count} files)" for run, count in sorted(periods_runs[period].items())])
+        print(f"    {period}: {runs_info}")
+    print(f"{'='*50}\n")
 
     #Check if timestrings match
     hit_timestrings = [f.split("-")[-2] for f in new_hit_list]
