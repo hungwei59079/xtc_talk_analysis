@@ -85,7 +85,7 @@ def merge_baseline_results(input_dir: Path, output_dir: Path, expected_count: in
     
     # Also mark missing indices as skipped (we don't have their detector IDs, so use -1 as placeholder)
     for idx in missing_indices:
-        print(f"⚠️  Index {idx} has no result file, marking as skipped")
+        print(f"⚠️  Index {idx} has no result file, marking as skipped") #FIXME: This looks weird? We didn't really mark anything?
     
     # Save merged results
     output_dir.mkdir(parents=True, exist_ok=True)
