@@ -1,9 +1,48 @@
 from pathlib import Path
+from lgdo.lh5 import read
 import numpy as np
 import argparse
 import json
 from datetime import datetime
-from xtc_utils import files_and_chnid, get_baseline_energy, XTCConfig
+from xtc_utils import files_and_chnid, relevant_events, XTCConfig
+
+
+def get_single_baseline_energy(new_hit_list, new_dsp_list, detector, detector_idx, flag_datasets, flag_conditions):
+    """
+    Computes mean baseline energy for a single detector.
+
+    Args:
+        new_hit_list: list of hit files
+        new_dsp_list: list of dsp files
+        detector: detector channel ID
+        detector_idx: index of detector in the channel list
+        flag_datasets: list of flag dataset names for filtering
+        flag_conditions: dict of conditions for filtering
+
+    Returns:
+        positive_baseline: mean positive baseline (trapTmax), or np.nan if failed
+        negative_baseline: mean negative baseline (trapTmin), or np.nan if failed
+        success: bool indicating if the computation succeeded
+    """
+    try:
+        energies, idxs = relevant_events(
+            table_path=f"ch{detector}/hit/",
+            files=new_hit_list,
+            ene_dataset="cuspEmax_ctc_cal",
+            flag_datasets=flag_datasets,
+            conditions=flag_conditions,
+            return_index=True
+        )
+        table = read(f"ch{detector}/dsp/", new_dsp_list, field_mask=["trapTmin", "trapTmax"], idx=idxs)
+        trapTmin = table["trapTmin"].nda
+        trapTmax = table["trapTmax"].nda
+        positive_baseline = np.mean(trapTmax)
+        negative_baseline = np.mean(trapTmin)
+        print(f"✅ Baseline energy evaluated for detector #{detector_idx} (ID={detector}).")
+        return positive_baseline, negative_baseline, True
+    except Exception as e:
+        print(f"❌ Failed for detector #{detector_idx} (ID={detector}): {e}")
+        return np.nan, np.nan, False
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -26,11 +65,16 @@ parser.add_argument(
          "Format: {\"p08\": [\"r015\", \"r016\"], \"p09\": [\"r001\"]}. "
          "If not provided, all periods/runs from the config will be used.",
 )
+parser.add_argument(
+    "detector_index",
+    type=int,
+    help="Index of the detector to process (0-based index into the channel list)."
+)
 args = parser.parse_args()
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = Path(args.config_path)
-OUTDIR = REPO_ROOT / "temp_results" / "parameters"
+OUTDIR = REPO_ROOT / "temp_results" / "parameters" / "baseline_individual"
 OUTDIR.mkdir(parents=True, exist_ok=True)
 
 # Load configuration using XTCConfig
@@ -49,25 +93,34 @@ if args.data_dict_path is not None:
 
 new_hit_list, new_dsp_list, chn_id = files_and_chnid(config, data_dict)
 
-positive_baseline, negative_baseline, skipped_channels = (
-    get_baseline_energy(new_hit_list, new_dsp_list, chn_id, 
-                        config.baseline_flag_datasets, config.baseline_conditions)
+# Validate detector index
+detector_index = args.detector_index
+if detector_index < 0 or detector_index >= len(chn_id):
+    raise ValueError(f"detector_index {detector_index} out of range. Valid range: 0-{len(chn_id)-1}")
+
+detector = chn_id[detector_index]
+print(f"Processing detector index {detector_index} (channel ID: {detector})")
+
+# Compute baseline for this single detector
+positive_baseline, negative_baseline, success = get_single_baseline_energy(
+    new_hit_list, new_dsp_list, detector, detector_index,
+    config.baseline_flag_datasets, config.baseline_conditions
 )
 
-np.save(OUTDIR / "positive_baseline.npy", positive_baseline)
-np.save(OUTDIR / "negative_baseline.npy", negative_baseline)
-
-if skipped_channels:
-    np.save(OUTDIR / "skipped_channels.npy", np.array(skipped_channels))
-
-# Save metadata recording what was used in this processing
-metadata = {
+# Save individual results
+result = {
+    "detector_index": detector_index,
+    "detector_id": detector,
+    "positive_baseline": float(positive_baseline) if not np.isnan(positive_baseline) else None,
+    "negative_baseline": float(negative_baseline) if not np.isnan(negative_baseline) else None,
+    "success": success,
     "config_path": str(CONFIG_PATH.resolve()),
     "config_name": args.config_name,
-    "data_filter": data_dict,  # None if all periods/runs were used
+    "data_filter": data_dict,
     "processed_at": datetime.now().isoformat(),
 }
-metadata_path = OUTDIR / "baseline_metadata.json"
-with open(metadata_path, "w") as f:
-    json.dump(metadata, f, indent=2)
-print(f"Metadata saved to: {metadata_path}")
+
+out_path = OUTDIR / f"baseline_{detector_index:04d}.json"
+with open(out_path, "w") as f:
+    json.dump(result, f, indent=2)
+print(f"Result saved to: {out_path}")

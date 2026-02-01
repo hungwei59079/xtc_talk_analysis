@@ -191,47 +191,6 @@ def relevant_events(
         return selected_energies, idxs
     return selected_energies
 
-def get_baseline_energy(new_hit_list, new_dsp_list, chn_id, flag_datasets, flag_conditions):
-    """
-    Computes mean baseline energy for each detector (chn_id).
-    Skips detectors that cause an error and logs them.
-
-    Returns:
-        baseline_energy: list of mean baseline energies (float)
-        skipped: list of detector IDs that failed
-    """
-    positive_baseline = []
-    negative_baseline = []
-    skipped = []
-
-    for j, detector in enumerate(chn_id):
-        try:
-            energies, idxs = relevant_events(
-                table_path=f"ch{detector}/hit/",
-                files=new_hit_list,
-                ene_dataset="cuspEmax_ctc_cal",
-                flag_datasets=flag_datasets,
-                conditions=flag_conditions,
-                return_index=True
-            )
-            table = lh5.read(f"ch{detector}/dsp/", new_dsp_list, field_mask=["trapTmin", "trapTmax"], idx=idxs)
-            trapTmin = table["trapTmin"].nda
-            trapTmax = table["trapTmax"].nda
-            positive_baseline.append(np.mean(trapTmax))
-            negative_baseline.append(np.mean(trapTmin))
-            print(f"✅ Baseline energy evaluated for detector #{j} (ID={detector}).")
-        except Exception as e:
-            print(f"❌ Skipping detector #{j} (ID={detector}): {e}")
-            skipped.append(detector)
-            positive_baseline.append(np.nan)
-            negative_baseline.append(np.nan)
-
-    print(f"\nSummary: {len(skipped)} detector(s) skipped.")
-    if skipped:
-        print("Skipped detector IDs:", skipped)
-
-    return positive_baseline, negative_baseline, skipped
-
 def xtalk_element(E_trig, E_response, baseline_value):
     # Check if baseline_value is numerical
     if not isinstance(baseline_value, (int, float)):
