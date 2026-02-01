@@ -3,7 +3,7 @@ import numpy as np
 import argparse
 import json
 from datetime import datetime
-from xtc_utils import files_and_chnid, get_baseline_energy
+from xtc_utils import files_and_chnid, get_baseline_energy, XTCConfig
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -33,6 +33,9 @@ CONFIG_PATH = Path(args.config_path)
 OUTDIR = REPO_ROOT / "temp_results" / "parameters"
 OUTDIR.mkdir(parents=True, exist_ok=True)
 
+# Load configuration using XTCConfig
+config = XTCConfig(CONFIG_PATH, args.config_name)
+
 # Load data_dict from file if provided
 data_dict = None
 if args.data_dict_path is not None:
@@ -44,10 +47,11 @@ if args.data_dict_path is not None:
     print(f"Loaded data filter from: {data_dict_path}")
     print(f"Filtering to periods/runs: {data_dict}")
 
-new_hit_list, new_dsp_list, chn_id = files_and_chnid(CONFIG_PATH, args.config_name, data_dict)
+new_hit_list, new_dsp_list, chn_id = files_and_chnid(config, data_dict)
 
 positive_baseline, negative_baseline, skipped_channels = (
-    get_baseline_energy(new_hit_list, new_dsp_list, chn_id)
+    get_baseline_energy(new_hit_list, new_dsp_list, chn_id, 
+                        config.baseline_flag_datasets, config.baseline_conditions)
 )
 
 np.save(OUTDIR / "positive_baseline.npy", positive_baseline)

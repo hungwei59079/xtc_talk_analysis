@@ -2,16 +2,36 @@ import os
 import numpy as np
 from lgdo import lh5
 from dbetto import TextDB, Props
-import json
 from pathlib import Path
 
-def files_and_chnid(config_path: Path, config_name: str, data_dict: dict = None):
-    with config_path.open() as f:
-        config = json.load(f)
-    xtc_dir = config["datasets"][config_name]["xtc_dir"]
-    dsp_dir_template = config["datasets"][config_name]["path_templates"]["dsp_dir"]
-    hit_dir_template = config["datasets"][config_name]["path_templates"]["hit_dir"]
-    full_data_dict = config["datasets"][config_name]["periods"]
+from .config import XTCConfig
+
+
+def files_and_chnid(config: XTCConfig, data_dict: dict = None):
+    """Get hit/dsp file lists and channel IDs from configuration.
+    
+    Parameters
+    ----------
+    config : XTCConfig
+        Configuration object for the dataset.
+    data_dict : dict, optional
+        Dictionary specifying which periods/runs to use.
+        Format: {"p08": ["r015", "r016"], "p09": ["r001"]}.
+        If not provided, all available periods/runs will be used.
+    
+    Returns
+    -------
+    new_hit_list : list
+        List of hit file paths.
+    new_dsp_list : list
+        List of DSP file paths.
+    chn_id : list
+        List of channel IDs for germanium detectors.
+    """
+    xtc_dir = config.xtc_dir
+    dsp_dir_template = config.dsp_dir_template
+    hit_dir_template = config.hit_dir_template
+    full_data_dict = config.available_periods
 
     # check if all periods and runs in data_dict are in full_data_dict
     if data_dict is not None:
@@ -171,7 +191,7 @@ def relevant_events(
         return selected_energies, idxs
     return selected_energies
 
-def get_baseline_energy(new_hit_list, new_dsp_list, chn_id):
+def get_baseline_energy(new_hit_list, new_dsp_list, chn_id, flag_datasets, flag_conditions):
     """
     Computes mean baseline energy for each detector (chn_id).
     Skips detectors that cause an error and logs them.
@@ -186,24 +206,14 @@ def get_baseline_energy(new_hit_list, new_dsp_list, chn_id):
 
     for j, detector in enumerate(chn_id):
         try:
-            try:
-                energies, idxs = relevant_events(
-                    table_path=f"ch{detector}/hit/",
-                    files=new_hit_list,
-                    ene_dataset="cuspEmax_ctc_cal",
-                    flag_datasets=["is_baseline"],
-                    conditions={"is_baseline": 63},
-                    return_index=True
-                )
-            except:
-                energies, idxs = relevant_events(
-                    table_path=f"ch{detector}/hit/",
-                    files=new_hit_list,
-                    ene_dataset="cuspEmax_ctc_cal",
-                    flag_datasets=["is_empty_candidate"],
-                    conditions={"is_empty_candidate": 63},
-                    return_index=True
-                )
+            energies, idxs = relevant_events(
+                table_path=f"ch{detector}/hit/",
+                files=new_hit_list,
+                ene_dataset="cuspEmax_ctc_cal",
+                flag_datasets=flag_datasets,
+                conditions=flag_conditions,
+                return_index=True
+            )
             table = lh5.read(f"ch{detector}/dsp/", new_dsp_list, field_mask=["trapTmin", "trapTmax"], idx=idxs)
             trapTmin = table["trapTmin"].nda
             trapTmax = table["trapTmax"].nda

@@ -6,7 +6,11 @@
         "hit_dir": "{xtc_dir}/generated/tier/hit/xtc/{period}/{run}",
         "dsp_dir": "{xtc_dir}/generated/tier/dsp/xtc/{period}/{run}"
       },
-      "periods": {
+      "baseline_flags": {
+        "flag_datasets": ["is_baseline"],
+        "conditions": {"is_baseline": 63}
+      },
+      "available_periods": {
         "p08": ["r015"]
       }
     },
@@ -16,7 +20,11 @@
         "hit_dir": "{xtc_dir}/generated/tier/hit/ssc/{period}/{run}",
         "dsp_dir": "{xtc_dir}/generated/tier/dsp/ssc/{period}/{run}"
       },
-      "periods": {
+      "baseline_flags": {
+        "flag_datasets": ["is_empty_candidate"],
+        "conditions": {"is_empty_candidate": 63}
+      },
+      "available_periods": {
         "p16": ["r008", "r009", "r010", "r011", "r012", "r013", "r014", "r015", "r016", "r017", "r018"]
       }
     }
