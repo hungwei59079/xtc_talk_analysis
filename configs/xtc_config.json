@@ -1,0 +1,24 @@
+{
+  "datasets": {
+    "xtc_old": {
+      "xtc_dir": "/global/cfs/cdirs/m2676/data/lngs/l200/scratch/crosstalk_data/xtc",
+      "path_templates": {
+        "hit_dir": "{xtc_dir}/generated/tier/hit/xtc/{period}/{run}",
+        "dsp_dir": "{xtc_dir}/generated/tier/dsp/xtc/{period}/{run}"
+      },
+      "periods": {
+        "p08": ["r015"]
+      }
+    },
+    "xtc_p16": {
+      "xtc_dir": "/global/cfs/projectdirs/m2676/data/lngs/l200/public/prodenv/prod-blind/auto/v2.0.0",
+      "path_templates": {
+        "hit_dir": "{xtc_dir}/generated/tier/hit/ssc/{period}/{run}",
+        "dsp_dir": "{xtc_dir}/generated/tier/dsp/ssc/{period}/{run}"
+      },
+      "periods": {
+        "p16": ["r008", "r009", "r010", "r011", "r012", "r013", "r014", "r015", "r016", "r017", "r018"]
+      }
+    }
+  }
+}
