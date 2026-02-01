@@ -28,7 +28,6 @@ parser.add_argument(
 )
 args = parser.parse_args()
 
-
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = Path(args.config_path)
 OUTDIR = REPO_ROOT / "temp_results" / "parameters"

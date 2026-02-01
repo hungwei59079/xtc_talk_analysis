@@ -186,14 +186,24 @@ def get_baseline_energy(new_hit_list, new_dsp_list, chn_id):
 
     for j, detector in enumerate(chn_id):
         try:
-            energies, idxs = relevant_events(
-                table_path=f"ch{detector}/hit/",
-                files=new_hit_list,
-                ene_dataset="cuspEmax_ctc_cal",
-                flag_datasets=["is_baseline"],
-                conditions={"is_baseline": 63},
-                return_index=True
-            )
+            try:
+                energies, idxs = relevant_events(
+                    table_path=f"ch{detector}/hit/",
+                    files=new_hit_list,
+                    ene_dataset="cuspEmax_ctc_cal",
+                    flag_datasets=["is_baseline"],
+                    conditions={"is_baseline": 63},
+                    return_index=True
+                )
+            except:
+                energies, idxs = relevant_events(
+                    table_path=f"ch{detector}/hit/",
+                    files=new_hit_list,
+                    ene_dataset="cuspEmax_ctc_cal",
+                    flag_datasets=["is_empty_candidate"],
+                    conditions={"is_empty_candidate": 63},
+                    return_index=True
+                )
             table = lh5.read(f"ch{detector}/dsp/", new_dsp_list, field_mask=["trapTmin", "trapTmax"], idx=idxs)
             trapTmin = table["trapTmin"].nda
             trapTmax = table["trapTmax"].nda
