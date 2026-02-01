@@ -2,6 +2,7 @@
 
 import sys
 import os
+import json
 import numpy as np
 from lgdo import lh5
 from xtc_utils import files_and_chnid, relevant_events, xtalk_element
@@ -10,8 +11,9 @@ from pathlib import Path
 
 # ---------- Setup ----------
 REPO_ROOT = Path(__file__).resolve().parents[1]
-CONFIG_PATH = REPO_ROOT / "xtc_config.json"
 PARAMS_PATH = REPO_ROOT / "temp_results"/ "parameters"
+baseline_metadata_file = PARAMS_PATH / "baseline_metadata.json"
+
 OUTDIR = REPO_ROOT / "temp_results" / "histograms"
 OUTDIR.mkdir(parents=True, exist_ok=True)
 new_hit_list, new_dsp_list, chn_id = files_and_chnid(CONFIG_PATH)
