@@ -5,7 +5,7 @@ import os
 import json
 import numpy as np
 from lgdo import lh5
-from xtc_utils import files_and_chnid, relevant_events, xtalk_element
+from xtc_utils import files_and_chnid, relevant_events, xtalk_element, XTCConfig
 import matplotlib.pyplot as plt
 from pathlib import Path
 
@@ -13,10 +13,18 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PARAMS_PATH = REPO_ROOT / "temp_results"/ "parameters"
 baseline_metadata_file = PARAMS_PATH / "baseline_metadata.json"
+with open(baseline_metadata_file, "r") as f:
+    baseline_metadata = json.load(f)
+    config_path_str = baseline_metadata["config_path"]
+    config_name = baseline_metadata["config_name"]
+    data_filter = baseline_metadata["data_filter"]
+
+CONFIG_PATH = Path(config_path_str)
+config = XTCConfig(CONFIG_PATH, config_name)
 
 OUTDIR = REPO_ROOT / "temp_results" / "histograms"
 OUTDIR.mkdir(parents=True, exist_ok=True)
-new_hit_list, new_dsp_list, chn_id = files_and_chnid(CONFIG_PATH)
+new_hit_list, new_dsp_list, chn_id = files_and_chnid(CONFIG_PATH, config_name, data_dict=data_filter)
 print("File listing complete.")
 
 # Load parameters
@@ -47,12 +55,13 @@ try:
         table_path=f"ch{raw_id_1}/hit/",
         files=new_hit_list,
         ene_dataset="cuspEmax_ctc_cal",
-        flag_datasets=["is_discharge", "is_valid_0vbb_old"],
-        conditions={"is_discharge": False, "is_valid_0vbb_old": True},
+        flag_datasets=config.xtalk_flag_trigger_datasets,
+        conditions=config.xtalk_flag_trigger_conditions,
         energy_range=(1500, 4500),
         return_index=True
     )
     trapTmax_1 = lh5.read(f"ch{raw_id_1}/dsp/trapTmax", new_dsp_list, idx=idxs).nda
+    trapTmax_map_1 = dict(zip(idxs, trapTmax_1)) # used later for secondary selection
     print("Trigger channel event extraction complete.")
     trig_extract_complete = True
 except Exception as e:
@@ -72,10 +81,17 @@ for j2 in range(0,101):
     elif raw_id_2 in skipped_channels:
         print(f"Skipping job ({j1}, {j2}) due to missing channel(s).")
     else:
-        energy_2 = lh5.read(f"ch{raw_id_2}/hit/cuspEmax_ctc_cal", new_hit_list, idx=idxs).nda
-        secondary_selection = (energy_2 < 100)
-        secondary_idxs = idxs[secondary_selection]
-        selected_trapTmax_1 = trapTmax_1[secondary_selection]
+        energy_2, secondary_idxs = relevant_events(
+            table_path=f"ch{raw_id_2}/hit/",
+            files=new_hit_list,
+            ene_dataset="cuspEmax_ctc_cal",
+            flag_datasets=config.xtalk_flag_response_datasets,
+            conditions=config.xtalk_flag_response_conditions,
+            energy_range=(-9999, 100),
+            idx = idxs,
+            return_index=True
+        )
+        selected_trapTmax_1 = np.array([trapTmax_map_1[i] for i in secondary_idxs])
 
         table_2 = lh5.read(f"ch{raw_id_2}/dsp/", new_dsp_list, field_mask=["trapTmin", "trapTmax"], idx=secondary_idxs)
         trapTmin_2 = table_2["trapTmin"].nda

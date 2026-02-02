@@ -138,6 +138,7 @@ def relevant_events(
     flag_datasets=None,
     conditions=None,
     energy_range=None,
+    idx = None,
     return_index=False):
     """
     Select events from a LH5 file based on multiple flag conditions and an optional energy range.
@@ -170,7 +171,10 @@ def relevant_events(
         conditions = {}
 
     all_fields = [ene_dataset] + flag_datasets
-    table = lh5.read(table_path, files, field_mask=all_fields)
+    if idx is not None:
+        table = lh5.read(table_path, files, field_mask=all_fields, idx=idx)
+    else:
+        table = lh5.read(table_path, files, field_mask=all_fields)
     energy_all = table[ene_dataset].nda
 
     selection_array = ~np.isnan(energy_all)
@@ -186,9 +190,13 @@ def relevant_events(
 
     selected_energies = energy_all[selection_array]
     if return_index == True:
-        idxs = np.arange(len(energy_all))
-        idxs = idxs[selection_array]
-        return selected_energies, idxs
+        if idx is None:
+            selected_idxs = np.arange(len(energy_all))
+            selected_idxs = selected_idxs[selection_array]
+            return selected_energies, selected_idxs
+        else:
+            selected_idxs = idx[selection_array]
+            return selected_energies, selected_idxs
     return selected_energies
 
 def xtalk_element(E_trig, E_response, baseline_value):

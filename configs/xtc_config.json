@@ -10,6 +10,12 @@
         "flag_datasets": ["is_baseline"],
         "conditions": {"is_baseline": 63}
       },
+      "xtalk_flags": {
+        "trigger_datasets": ["is_discharge", "is_valid_0vbb_old"],
+        "trigger_conditions": {"is_discharge": false, "is_valid_0vbb_old": true},
+        "response_datasets": [],
+        "response_conditions": {}
+      },
       "available_periods": {
         "p08": ["r015"]
       }
@@ -23,6 +29,12 @@
       "baseline_flags": {
         "flag_datasets": ["is_empty_candidate"],
         "conditions": {"is_empty_candidate": 63}
+      },
+      "xtalk_flags": {
+        "trigger_datasets": ["is_highly_positive_polarity_candidate"],
+        "trigger_conditions": {"is_highly_positive_polarity_candidate": 511},
+        "response_datasets": ["is_negative_polarity_candidate"],
+        "response_conditions": {"is_negative_polarity_candidate": 63}
       },
       "available_periods": {
         "p16": ["r008", "r009", "r010", "r011", "r012", "r013", "r014", "r015", "r016", "r017", "r018"]
