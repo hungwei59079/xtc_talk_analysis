@@ -19,12 +19,13 @@ with open(baseline_metadata_file, "r") as f:
     config_name = baseline_metadata["config_name"]
     data_filter = baseline_metadata["data_filter"]
 
+print(data_filter) # I got None
 CONFIG_PATH = Path(config_path_str)
 config = XTCConfig(CONFIG_PATH, config_name)
 
 OUTDIR = REPO_ROOT / "temp_results" / "histograms"
 OUTDIR.mkdir(parents=True, exist_ok=True)
-new_hit_list, new_dsp_list, chn_id = files_and_chnid(CONFIG_PATH, config_name, data_dict=data_filter)
+new_hit_list, new_dsp_list, chn_id = files_and_chnid(config, data_dict=data_filter)
 print("File listing complete.")
 
 # Load parameters
@@ -70,7 +71,7 @@ except Exception as e:
 
 NBINS = 700
 
-for j2 in range(0,101):
+for j2 in range(len(chn_id)):
     raw_id_2 = chn_id[j2]
     neg_vals = np.array([])
     pos_vals = np.array([])
