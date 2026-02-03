@@ -130,5 +130,7 @@ plt.savefig(OUT_DIR / "Pos_xtk_map_fitted.png")
 if actual_reason:
     print("negative fail list:\n")
     print(neg_fail_list)
+    print(f"total number: {len(neg_fail_list)}")
     print("positive fail list:\n")
     print(pos_fail_list)
+    print(f"total number: {len(pos_fail_list)}")

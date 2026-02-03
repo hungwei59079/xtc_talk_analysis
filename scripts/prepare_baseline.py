@@ -116,7 +116,7 @@ result = {
     "success": success,
     "config_path": str(CONFIG_PATH.resolve()),
     "config_name": args.config_name,
-    "data_filter": data_dict,
+    "data_filter": data_dict, 
     "processed_at": datetime.now().isoformat(),
 }
 
