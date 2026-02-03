@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 import sys
 import argparse
 from pathlib import Path
-from xtc_utils import files_and_chnid
+from xtc_utils import files_and_chnid, XTCConfig
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -21,24 +21,26 @@ reason_dict = {None : None,
 actual_reason = reason_dict[args.reason]
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-CONFIG_PATH = REPO_ROOT / "xtc_config.json"
+CONFIG_PATH = REPO_ROOT / "configs" / "xtc_config.json"
+config = XTCConfig(CONFIG_PATH, "xtc_p16")
+
 IN_DIR = REPO_ROOT / "temp_results" / "fit_results"
 SKIP_DIR = REPO_ROOT / "temp_results" / "parameters"
 OUT_DIR = REPO_ROOT / "results"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-neg_xtalk_matrix = np.full((101, 101),np.nan)
-pos_xtalk_matrix = np.full((101, 101),np.nan)
+neg_xtalk_matrix = np.full((60, 60),np.nan)
+pos_xtalk_matrix = np.full((60, 60),np.nan)
 neg_fail_list = []
 pos_fail_list = []
 scenarios = set()
 
-new_hit_list, new_dsp_list, chn_id = files_and_chnid(CONFIG_PATH)
+new_hit_list, new_dsp_list, chn_id = files_and_chnid(config)
 skipped_channels = set(np.load(SKIP_DIR / "skipped_channels.npy"))
 
-for j1 in range(101):
+for j1 in range(60):
     raw_id_1 = chn_id[j1]
-    for j2 in range(101):
+    for j2 in range(60):
         raw_id_2 = chn_id[j2]
         npz_path = IN_DIR / f"fit_neg_{j1}_{j2}.npz"
         try:
@@ -53,8 +55,8 @@ for j1 in range(101):
         if reason not in scenarios:
             scenarios.add(reason)
         neg_xtalk_matrix[j1,j2] = mu
-        if neg_xtalk_matrix[j1,j2] < -2:
-            print(f"neg xtalk value for {(j1,j2)} is {neg_xtalk_matrix[j1,j2]}")
+        #if neg_xtalk_matrix[j1,j2] < -2:
+           # print(f"neg xtalk value for {(j1,j2)} is {neg_xtalk_matrix[j1,j2]}")
         if reason == actual_reason:
             if raw_id_1 not in skipped_channels and raw_id_2 not in skipped_channels:
                 if raw_id_1 != raw_id_2:
@@ -69,13 +71,16 @@ for j1 in range(101):
         if reason not in scenarios:
             scenarios.add(reason)
         pos_xtalk_matrix[j1,j2] = mu
-        if pos_xtalk_matrix[j1,j2] > 0.05:
-            print(f"pos xtalk value for {(j1,j2)} is {pos_xtalk_matrix[j1,j2]}")
+        #if pos_xtalk_matrix[j1,j2] > 0.05:
+            #print(f"pos xtalk value for {(j1,j2)} is {pos_xtalk_matrix[j1,j2]}")
         if reason == actual_reason:
             if raw_id_1 not in skipped_channels and raw_id_2 not in skipped_channels:
                 if raw_id_1 != raw_id_2:
                     pos_fail_list.append(f"{j1},{j2}")
 
+
+print(neg_xtalk_matrix)
+print(scenarios)
 # -----------Negative Plot ---------------
 
 # Set up value range and colormap

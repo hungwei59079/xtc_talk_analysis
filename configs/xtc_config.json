@@ -33,8 +33,8 @@
       "xtalk_flags": {
         "trigger_datasets": ["is_highly_positive_polarity_candidate"],
         "trigger_conditions": {"is_highly_positive_polarity_candidate": 511},
-        "response_datasets": ["is_negative_polarity_candidate"],
-        "response_conditions": {"is_negative_polarity_candidate": 63}
+        "response_datasets": [],
+        "response_conditions": {}
       },
       "available_periods": {
         "p16": ["r008", "r009", "r010", "r011", "r012", "r013", "r014", "r015", "r016", "r017", "r018"]
