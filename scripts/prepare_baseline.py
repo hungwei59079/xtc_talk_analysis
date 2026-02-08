@@ -116,8 +116,10 @@ result = {
     "success": success,
     "config_path": str(CONFIG_PATH.resolve()),
     "config_name": args.config_name,
+    "baseline_flag": config.baseline_flag_datasets,
+    "baseline_condition": config.baseline_conditions,
     "data_filter": data_dict, 
-    "processed_at": datetime.now().isoformat(),
+    "processed_at": datetime.now().isoformat()
 }
 
 out_path = OUTDIR / f"baseline_{detector_index:04d}.json"

@@ -126,14 +126,14 @@ for j2 in range(config.number_of_detectors):
     # Build histograms (counts + bin edges). For empty arrays save empty arrays.
     if neg_vals.size:
         # neg_counts, neg_bins = np.histogram(neg_vals, bins=NBINS, range=(max(min(neg_vals), -5),0.5))
-        neg_counts, neg_bins = np.histogram(neg_vals, bins=NBINS, range=(min(neg_vals),0.5))
+        neg_counts, neg_bins = np.histogram(neg_vals, bins=NBINS)
     else:
         neg_counts = np.array([], dtype=int)
         neg_bins = np.array([])
 
     if pos_vals.size:
         # pos_counts, pos_bins = np.histogram(pos_vals, bins=NBINS, range=(-0.5,min(max(pos_vals), 5)))
-        pos_counts, pos_bins = np.histogram(pos_vals, bins=NBINS, range=(-0.5, max(pos_vals)))
+        pos_counts, pos_bins = np.histogram(pos_vals, bins=NBINS)
     else:
         pos_counts = np.array([], dtype=int)
         pos_bins = np.array([])
