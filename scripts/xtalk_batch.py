@@ -19,7 +19,7 @@ with open(baseline_metadata_file, "r") as f:
     config_name = baseline_metadata["config_name"]
     data_filter = baseline_metadata["data_filter"]
 
-print(data_filter) # I got None
+print(data_filter) 
 CONFIG_PATH = Path(config_path_str)
 config = XTCConfig(CONFIG_PATH, config_name)
 
@@ -36,9 +36,31 @@ skipped_channels = set(np.load(PARAMS_PATH / "skipped_channels.npy"))
 j1 = int(sys.argv[1])
 raw_id_1 = chn_id[j1]
 
+# Save metadata only from job 0 to avoid race conditions
+if j1 == 0:
+    from datetime import datetime
+    xtalk_metadata = {
+        # Inherited from baseline_metadata.json
+        "config_path": config_path_str,
+        "config_name": config_name,
+        "data_filter": data_filter,
+        # Config parameters used in xtalk processing
+        "number_of_detectors": config.number_of_detectors,
+        "xtalk_flag_trigger_datasets": config.xtalk_flag_trigger_datasets,
+        "xtalk_flag_trigger_conditions": config.xtalk_flag_trigger_conditions,
+        "xtalk_flag_response_datasets": config.xtalk_flag_response_datasets,
+        "xtalk_flag_response_conditions": config.xtalk_flag_response_conditions,
+        # Processing info
+        "processed_at": datetime.now().isoformat(),
+    }
+    xtalk_metadata_file = OUTDIR / "xtalk_metadata.json"
+    with open(xtalk_metadata_file, "w") as f:
+        json.dump(xtalk_metadata, f, indent=2)
+    print(f"Metadata saved to {xtalk_metadata_file}")
+
 if raw_id_1 in skipped_channels:
     print(f"Trigger channel j1={j1} (raw {raw_id_1}) is in skipped_channels; saving empty histograms for all j2.")
-    for j2 in range(0, 101):
+    for j2 in range(config.number_of_detectors):
         out_path = OUTDIR / f"xtalk_{j1}_{j2}.npz"
         np.savez_compressed(
             out_path,
@@ -71,7 +93,7 @@ except Exception as e:
 
 NBINS = 700
 
-for j2 in range(len(chn_id)):
+for j2 in range(config.number_of_detectors):
     raw_id_2 = chn_id[j2]
     neg_vals = np.array([])
     pos_vals = np.array([])

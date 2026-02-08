@@ -105,6 +105,11 @@ class XTCConfig:
         """Dictionary of conditions for baseline flag datasets."""
         return self.baseline_flags.get("conditions", {})
     
+    @property
+    def number_of_detectors(self) -> int:
+        """Total number of detectors in the dataset."""
+        return self._config.get("number_of_detectors", 0)
+    
     def get(self, key: str, default=None):
         """Get a configuration value by key.
         

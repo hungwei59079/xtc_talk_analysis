@@ -1,4 +1,5 @@
 import os
+import json
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
@@ -14,10 +15,15 @@ OUT_DIR = REPO_ROOT / "temp_results" / "fit_results"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 # out_dir_figs = os.path.join(base_dir, "../fit_figures")
 
+xtalk_metadata_file = IN_DIR / "xtalk_metadata.json"
+with open(xtalk_metadata_file, "r") as f:
+    xtalk_metadata = json.load(f)
+    number_of_detectors = xtalk_metadata["number_of_detectors"]
+
 def gaussian(x, A, mu, sigma):
     return A * np.exp(-(x - mu)**2 / (2 * sigma**2))
 
-for j2 in range(101):
+for j2 in range(number_of_detectors):
     npz_path = IN_DIR / f"xtalk_{j1}_{j2}.npz"
 
     with np.load(npz_path) as data:

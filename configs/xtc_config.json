@@ -6,6 +6,7 @@
         "hit_dir": "{xtc_dir}/generated/tier/hit/xtc/{period}/{run}",
         "dsp_dir": "{xtc_dir}/generated/tier/dsp/xtc/{period}/{run}"
       },
+      "number_of_detectors": 101,
       "baseline_flags": {
         "flag_datasets": ["is_baseline"],
         "conditions": {"is_baseline": 63}
@@ -26,6 +27,7 @@
         "hit_dir": "{xtc_dir}/generated/tier/hit/ssc/{period}/{run}",
         "dsp_dir": "{xtc_dir}/generated/tier/dsp/ssc/{period}/{run}"
       },
+      "number_of_detectors": 60,
       "baseline_flags": {
         "flag_datasets": ["is_empty_candidate"],
         "conditions": {"is_empty_candidate": 63}

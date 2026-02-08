@@ -2,6 +2,7 @@ import os
 import numpy as np
 import matplotlib.pyplot as plt
 import sys
+import json
 import argparse
 from pathlib import Path
 from xtc_utils import files_and_chnid, XTCConfig
@@ -29,8 +30,13 @@ SKIP_DIR = REPO_ROOT / "temp_results" / "parameters"
 OUT_DIR = REPO_ROOT / "results"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
-neg_xtalk_matrix = np.full((60, 60),np.nan)
-pos_xtalk_matrix = np.full((60, 60),np.nan)
+xtalk_metadata_file = REPO_ROOT / "temp_results" / "histograms" / "xtalk_metadata.json"
+with open(xtalk_metadata_file, "r") as f:
+    xtalk_metadata = json.load(f)
+    number_of_detectors = xtalk_metadata["number_of_detectors"]
+
+neg_xtalk_matrix = np.full((number_of_detectors, number_of_detectors),np.nan)
+pos_xtalk_matrix = np.full((number_of_detectors, number_of_detectors),np.nan)
 neg_fail_list = []
 pos_fail_list = []
 scenarios = set()
@@ -38,9 +44,9 @@ scenarios = set()
 new_hit_list, new_dsp_list, chn_id = files_and_chnid(config)
 skipped_channels = set(np.load(SKIP_DIR / "skipped_channels.npy"))
 
-for j1 in range(60):
+for j1 in range(number_of_detectors):
     raw_id_1 = chn_id[j1]
-    for j2 in range(60):
+    for j2 in range(number_of_detectors):
         raw_id_2 = chn_id[j2]
         npz_path = IN_DIR / f"fit_neg_{j1}_{j2}.npz"
         try:
