@@ -119,7 +119,14 @@ def files_and_chnid(config: XTCConfig, data_dict: dict = None):
     # print(hit_timestrings)
     if set(hit_timestrings) != set(dsp_timestrings):
         raise ValueError("Hit and DSP files have mismatched time strings.")
-    time_string = hit_timestrings[0] 
+    time_string = hit_timestrings[0]
+
+    #Check if number of events match
+    hit_table = lh5.read('/ch1078400/hit/', new_hit_list)
+    dsp_table = lh5.read('/ch1078400/dsp/', new_dsp_list)
+    print(f"hit_table_length: {len(hit_table)}; dsp_table_length:{len(dsp_table)}")
+    if len(hit_table) != len(dsp_table):
+        raise ValueError("Hit and dsp tables have unequal number of events.")
     
     #Now we can obtain the raw ids using the .on() utility.
     

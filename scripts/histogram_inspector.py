@@ -75,6 +75,8 @@ else:
 if not success:
     print(f"No plot due to {reason}")
     plt.figure()
+    print(x)
+    print(y)
     plt.bar(x, y, width=np.diff(bins), alpha=0.5, label=f"data (N={total_events})")
     plt.title(f"{label} histogram j1={j1}, j2={j2}")
     plt.legend()
@@ -102,6 +104,8 @@ mask = y > 0.05 * np.max(y)
 x_fit = x[mask]
 
 plt.figure()
+print(x)
+print(y)
 plt.bar(x, y, width=np.diff(bins), alpha=0.5, label=f"data (N={total_events})")
 x_dense = np.linspace(min(x_fit), max(x_fit), 300)
 plt.plot(
