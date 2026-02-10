@@ -18,6 +18,8 @@ with open(baseline_metadata_file, "r") as f:
     config_path_str = baseline_metadata["config_path"]
     config_name = baseline_metadata["config_name"]
     data_filter = baseline_metadata["data_filter"]
+    baseline_flags = baseline_metadata["baseline_flags"]
+    baseline_conditions = baseline_metadata["baseline_conditions"]
 
 print(data_filter) 
 CONFIG_PATH = Path(config_path_str)
@@ -44,6 +46,8 @@ if j1 == 0:
         "config_path": config_path_str,
         "config_name": config_name,
         "data_filter": data_filter,
+        "baseline_flags": baseline_flags,
+        "baseline_conditions": baseline_conditions,
         # Config parameters used in xtalk processing
         "number_of_detectors": config.number_of_detectors,
         "xtalk_flag_trigger_datasets": config.xtalk_flag_trigger_datasets,

@@ -5,6 +5,7 @@
 temp_results/
 logs/
 results/waveforms/
+results/Inspected_histograms/
 # Ignore Python cache
 __pycache__/
 *.pyc

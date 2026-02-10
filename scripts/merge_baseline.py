@@ -47,6 +47,8 @@ def merge_baseline_results(input_dir: Path, output_dir: Path, expected_count: in
                 "config_path": data.get("config_path"),
                 "config_name": data.get("config_name"),
                 "data_filter": data.get("data_filter"),
+                "baseline_flags": data.get("baseline_flags"),
+                "baseline_conditions": data.get("baseline_conditions")
             }
     
     # Determine the range of indices
@@ -104,9 +106,11 @@ def merge_baseline_results(input_dir: Path, output_dir: Path, expected_count: in
     n_failed = len(skipped_channels)
     
     metadata = {
-        "config_path": metadata_sample["config_path"] if metadata_sample else None,
-        "config_name": metadata_sample["config_name"] if metadata_sample else None,
-        "data_filter": metadata_sample["data_filter"] if metadata_sample else None,
+        "config_path": metadata_sample["config_path"],
+        "config_name": metadata_sample["config_name"],
+        "data_filter": metadata_sample["data_filter"],
+        "baseline_flags": metadata_sample["baseline_flags"],
+        "baseline_conditions": metadata_sample["baseline_conditions"],
         "merged_at": datetime.now().isoformat(),
         "total_detectors": n_detectors,
         "successful": int(n_success),

@@ -116,8 +116,8 @@ result = {
     "success": success,
     "config_path": str(CONFIG_PATH.resolve()),
     "config_name": args.config_name,
-    "baseline_flag": config.baseline_flag_datasets,
-    "baseline_condition": config.baseline_conditions,
+    "baseline_flags": config.baseline_flag_datasets,
+    "baseline_conditions": config.baseline_conditions,
     "data_filter": data_dict, 
     "processed_at": datetime.now().isoformat()
 }
