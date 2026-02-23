@@ -46,4 +46,12 @@ except Exception as e:
     print(f"Exception occurred at trigger channel {j1} extraction.")
     trig_extract_complete = False
 
-
+histogram = np.histogram(trapTmax_1, bins=100)
+plt.figure(figsize=(10,6))
+plt.bar(histogram[1][:-1], histogram[0], width=np.diff(histogram[1]), align='edge')
+plt.xlabel('trapTmax')
+plt.ylabel('Counts')
+plt.title(f'Channel {j1} (raw {raw_id_1}) trapTmax Distribution')
+plt.grid()
+plt.savefig(REPO_ROOT / "results" / f"trapTmax_histogram_j{j1}.png")
+plt.close()
