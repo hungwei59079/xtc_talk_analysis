@@ -53,9 +53,24 @@ print("File listing complete.")
 j1 = int(args.channel_number)
 raw_id_1 = chn_id[j1]
 
+# Always load pre-selection data (with NaN filtering only)
+energy_1_raw = lh5.read(f"ch{raw_id_1}/hit/cuspEmax_ctc_cal", new_hit_list).nda
+mask_energy_raw = ~np.isnan(energy_1_raw)
+energy_1_presel = energy_1_raw[mask_energy_raw]
+
+trapTmax_1_raw = lh5.read(f"ch{raw_id_1}/dsp/trapTmax", new_dsp_list).nda
+print(f"trapTmax maximum: {np.nanmax(trapTmax_1_raw)}")
+mask_trap_raw = ~np.isnan(trapTmax_1_raw) & (trapTmax_1_raw > 200)
+trapTmax_1_presel = trapTmax_1_raw[mask_trap_raw]
+
+# Selected data (if selection is enabled)
+energy_1_sel = None
+trapTmax_1_sel = None
+trig_extract_complete = False
+
 if args.selection:
     try:
-        energy_1, idxs = relevant_events(
+        energy_1_sel, idxs = relevant_events(
             table_path=f"ch{raw_id_1}/hit/",
             files=new_hit_list,
             ene_dataset="cuspEmax_ctc_cal",
@@ -65,43 +80,47 @@ if args.selection:
             return_index=True
         )
                 
-        trapTmax_1 = lh5.read(f"ch{raw_id_1}/dsp/trapTmax", new_dsp_list, idx=idxs).nda
-        # mask = ~np.isnan(energy_1)
-        mask = ~np.isnan(trapTmax_1) & (trapTmax_1 > 200)
-        trapTmax_1 = trapTmax_1[mask]
-        trapTmax_map_1 = dict(zip(idxs, trapTmax_1)) # used later for secondary selection
+        trapTmax_1_sel_raw = lh5.read(f"ch{raw_id_1}/dsp/trapTmax", new_dsp_list, idx=idxs).nda
+        mask_sel = ~np.isnan(trapTmax_1_sel_raw) & (trapTmax_1_sel_raw > 200)
+        trapTmax_1_sel = trapTmax_1_sel_raw[mask_sel]
+        trapTmax_map_1 = dict(zip(idxs, trapTmax_1_sel)) # used later for secondary selection
         print("Trigger channel event extraction complete.")
         trig_extract_complete = True
     except Exception as e:
         print(f"Exception occurred at trigger channel {j1} extraction: {e}")
         trig_extract_complete = False
 
-else:
-    energy_1 = lh5.read(f"ch{raw_id_1}/hit/cuspEmax_ctc_cal", new_hit_list).nda
-    mask = ~np.isnan(energy_1)
-    energy_1 = energy_1[mask]
-    trapTmax_1 = lh5.read(f"ch{raw_id_1}/dsp/trapTmax", new_dsp_list).nda
-    print(f"trapTmax maximum: {max(trapTmax_1)}")
-    # mask = ~np.isnan(trapTmax_1)
-    mask = ~np.isnan(trapTmax_1) & (trapTmax_1 > 200)
-    trapTmax_1 = trapTmax_1[mask]
-
-histogram = np.histogram(energy_1, bins=100)
+# ---------- Plotting ----------
+# cuspEmax histogram
 plt.figure(figsize=(10,6))
-plt.bar(histogram[1][:-1], histogram[0], width=np.diff(histogram[1]), align='edge', label=f"cuspEmax ({len(energy_1)})")
+hist_presel = np.histogram(energy_1_presel, bins=100)
+plt.bar(hist_presel[1][:-1], hist_presel[0], width=np.diff(hist_presel[1]), align='edge', 
+        alpha=0.5, label=f"cuspEmax pre-sel ({len(energy_1_presel)})")
+if args.selection and energy_1_sel is not None:
+    hist_sel = np.histogram(energy_1_sel, bins=hist_presel[1])  # Use same bins
+    plt.bar(hist_sel[1][:-1], hist_sel[0], width=np.diff(hist_sel[1]), align='edge', 
+            alpha=0.7, label=f"cuspEmax selected ({len(energy_1_sel)})")
 plt.xlabel('cuspEmax_ctc_cal')
 plt.ylabel('Counts')
+plt.yscale('log')
 plt.title(f'Channel {j1} (raw {raw_id_1}) cuspEmax Distribution')
 plt.grid()
 plt.legend()
 plt.savefig(REPO_ROOT / "results" / "Inspected_histograms" / f"cuspEmax_histogram_j{j1}.png")
 plt.close()
 
-histogram = np.histogram(trapTmax_1, bins=100)
+# trapTmax histogram
 plt.figure(figsize=(10,6))
-plt.bar(histogram[1][:-1], histogram[0], width=np.diff(histogram[1]), align='edge', label=f"trapTmax ({len(trapTmax_1)})")
+hist_trap_presel = np.histogram(trapTmax_1_presel, bins=100)
+plt.bar(hist_trap_presel[1][:-1], hist_trap_presel[0], width=np.diff(hist_trap_presel[1]), align='edge', 
+        alpha=0.5, label=f"trapTmax pre-sel ({len(trapTmax_1_presel)})")
+if args.selection and trapTmax_1_sel is not None:
+    hist_trap_sel = np.histogram(trapTmax_1_sel, bins=hist_trap_presel[1])  # Use same bins
+    plt.bar(hist_trap_sel[1][:-1], hist_trap_sel[0], width=np.diff(hist_trap_sel[1]), align='edge', 
+            alpha=0.7, label=f"trapTmax selected ({len(trapTmax_1_sel)})")
 plt.xlabel('trapTmax')
 plt.ylabel('Counts')
+plt.yscale('log')
 plt.title(f'Channel {j1} (raw {raw_id_1}) trapTmax Distribution')
 plt.grid()
 plt.legend()
