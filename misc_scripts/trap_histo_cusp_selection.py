@@ -26,13 +26,18 @@ parser.add_argument(
     action="store_true",
     help="do selection or not"
 )
+parser.add_argument(
+    "--config_name",
+    type=str,
+    default="xtc_p16",
+)
 
 args = parser.parse_args()
 
 # ---------- Setup ----------
 REPO_ROOT = Path(__file__).resolve().parents[1]
 config_path_str = "/global/u2/h/hungwei/xtc_talk_analysis/configs/xtc_config.json"
-config_name = "xtc_old"
+config_name = args.config_name
 
 CONFIG_PATH = Path(config_path_str)
 config = XTCConfig(CONFIG_PATH, config_name)
@@ -58,10 +63,13 @@ energy_1_raw = lh5.read(f"ch{raw_id_1}/hit/cuspEmax_ctc_cal", new_hit_list).nda
 mask_energy_raw = ~np.isnan(energy_1_raw)
 energy_1_presel = energy_1_raw[mask_energy_raw]
 
-trapTmax_1_raw = lh5.read(f"ch{raw_id_1}/dsp/trapTmax", new_dsp_list).nda
-print(f"trapTmax maximum: {np.nanmax(trapTmax_1_raw)}")
-mask_trap_raw = ~np.isnan(trapTmax_1_raw) & (trapTmax_1_raw > 200)
-trapTmax_1_presel = trapTmax_1_raw[mask_trap_raw]
+table = lh5.read(f"ch{raw_id_1}/dsp/", new_dsp_list, field_mask=["trapTmax","trapTmin"])
+trapTmax_1_raw = table["trapTmax"].nda
+trapTmin_1_raw = table["trapTmin"].nda
+max_mask_cusp_raw = ~np.isnan(trapTmax_1_raw)
+min_mask_cusp_raw = ~np.isnan(trapTmin_1_raw)
+trapTmax_1_presel = trapTmax_1_raw[max_mask_cusp_raw]
+trapTmin_1_presel = trapTmin_1_raw[min_mask_cusp_raw]
 
 # Selected data (if selection is enabled)
 energy_1_sel = None
@@ -74,16 +82,21 @@ if args.selection:
             table_path=f"ch{raw_id_1}/hit/",
             files=new_hit_list,
             ene_dataset="cuspEmax_ctc_cal",
-            flag_datasets=config.xtalk_flag_trigger_datasets,
-            conditions=config.xtalk_flag_trigger_conditions,
-            energy_range=(1500, 4500),
+            flag_datasets=config.baseline_flag_datasets,
+            # flag_datasets=config.xtalk_flag_trigger_datasets,
+            conditions=config.baseline_conditions,
+            # conditions=config.xtalk_flag_trigger_conditions,
+            # energy_range=(1500, 4500),
             return_index=True
         )
                 
-        trapTmax_1_sel_raw = lh5.read(f"ch{raw_id_1}/dsp/trapTmax", new_dsp_list, idx=idxs).nda
-        mask_sel = ~np.isnan(trapTmax_1_sel_raw) & (trapTmax_1_sel_raw > 200)
-        trapTmax_1_sel = trapTmax_1_sel_raw[mask_sel]
-        trapTmax_map_1 = dict(zip(idxs, trapTmax_1_sel)) # used later for secondary selection
+        table = lh5.read(f"ch{raw_id_1}/dsp/", new_dsp_list, field_mask=["trapTmin", "trapTmax"], idx=idxs)
+        trapTmax_1_sel_raw = table["trapTmax"].nda
+        trapTmin_1_sel_raw = table["trapTmin"].nda
+        max_mask_sel = ~np.isnan(trapTmax_1_sel_raw)
+        min_mask_sel = ~np.isnan(trapTmin_1_sel_raw)
+        trapTmax_1_sel = trapTmax_1_sel_raw[max_mask_sel]
+        trapTmin_1_sel = trapTmin_1_sel_raw[min_mask_sel]
         print("Trigger channel event extraction complete.")
         trig_extract_complete = True
     except Exception as e:
@@ -111,12 +124,12 @@ plt.close()
 
 # trapTmax histogram
 plt.figure(figsize=(10,6))
-hist_trap_presel = np.histogram(trapTmax_1_presel, bins=100)
-plt.bar(hist_trap_presel[1][:-1], hist_trap_presel[0], width=np.diff(hist_trap_presel[1]), align='edge', 
+hist_trapTmax_presel = np.histogram(trapTmax_1_presel, bins=100)
+plt.bar(hist_trapTmax_presel[1][:-1], hist_trapTmax_presel[0], width=np.diff(hist_trapTmax_presel[1]), align='edge', 
         alpha=0.5, label=f"trapTmax pre-sel ({len(trapTmax_1_presel)})")
 if args.selection and trapTmax_1_sel is not None:
-    hist_trap_sel = np.histogram(trapTmax_1_sel, bins=hist_trap_presel[1])  # Use same bins
-    plt.bar(hist_trap_sel[1][:-1], hist_trap_sel[0], width=np.diff(hist_trap_sel[1]), align='edge', 
+    hist_trapTmax_sel = np.histogram(trapTmax_1_sel, bins=hist_trapTmax_presel[1])  # Use same bins
+    plt.bar(hist_trapTmax_sel[1][:-1], hist_trapTmax_sel[0], width=np.diff(hist_trapTmax_sel[1]), align='edge', 
             alpha=0.7, label=f"trapTmax selected ({len(trapTmax_1_sel)})")
 plt.xlabel('trapTmax')
 plt.ylabel('Counts')
@@ -125,4 +138,22 @@ plt.title(f'Channel {j1} (raw {raw_id_1}) trapTmax Distribution')
 plt.grid()
 plt.legend()
 plt.savefig(REPO_ROOT / "results" / "Inspected_histograms" / f"trapTmax_histogram_j{j1}.png")
+plt.close()
+
+#trapTmin histogram
+plt.figure(figsize=(10,6))
+hist_trapTmin_presel = np.histogram(trapTmin_1_presel, bins=100)
+plt.bar(hist_trapTmin_presel[1][:-1], hist_trapTmin_presel[0], width=np.diff(hist_trapTmin_presel[1]), align='edge', 
+        alpha=0.5, label=f"trapTmin pre-sel ({len(trapTmin_1_presel)})")
+if args.selection and trapTmin_1_sel is not None:
+    hist_trapTmin_sel = np.histogram(trapTmin_1_sel, bins=hist_trapTmin_presel[1])  # Use same bins
+    plt.bar(hist_trapTmin_sel[1][:-1], hist_trapTmin_sel[0], width=np.diff(hist_trapTmin_sel[1]), align='edge', 
+            alpha=0.7, label=f"trapTmin selected ({len(trapTmin_1_sel)})")
+plt.xlabel('trapTmin')
+plt.ylabel('Counts')
+plt.yscale('log')
+plt.title(f'Channel {j1} (raw {raw_id_1}) trapTmin Distribution')
+plt.grid()
+plt.legend()
+plt.savefig(REPO_ROOT / "results" / "Inspected_histograms" / f"trapTmin_histogram_j{j1}.png")
 plt.close()
