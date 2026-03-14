@@ -85,6 +85,9 @@ def files_and_chnid(config: XTCConfig, data_dict: dict = None):
                 new_hit_list += [f"{hit_dir}/{f}" for f in os.listdir(hit_dir) if f.endswith(".lh5")]
                 new_dsp_list += [f"{dsp_dir}/{f}" for f in os.listdir(dsp_dir) if f.endswith(".lh5")]
 
+    new_dsp_list = sorted(new_dsp_list)
+    new_hit_list = sorted(new_hit_list)
+
     # Print summary of collected hit files
     print(f"\n{'='*50}")
     print(f"Summary of collected hit files:")
@@ -144,11 +147,9 @@ def relevant_events(
     table_path,
     files,
     ene_dataset,
-    flag_datasets=None,
     conditions=None,
     energy_range=None,
-    idx = None,
-    return_index=False):
+    idx = None):
     """
     Select events from a LH5 file based on multiple flag conditions and an optional energy range.
 
@@ -159,37 +160,38 @@ def relevant_events(
         The LH5 file(s) to read.
     - ene_dataset: str
         The name of the dataset containing the energy values.
-    - flag_datasets: list of str, optional
-        List of flag dataset names to apply conditions to.
     - conditions: dict, optional
         Dictionary mapping each flag dataset name to its condition.
         If a flag dataset is listed but no condition is given, defaults to True.
     - energy_range: tuple (emin, emax), optional
         If provided, only energies within this inclusive range will be kept.
-    - return_index: If specified as True, then return the indices that meet the condition.
 
-    Returns:
-    - selected_energies: np.ndarray
+    Returns: A dictionary that contains:
+    - energy_presel: energy without BOTH INDEXING and flag selection.
+    - energy_sel: np.ndarray
         1D array of energy values satisfying all given conditions.
-    - idxs: np.ndarray
+    - indices: np.ndarray
         array of indices of the events being selected.
     """
-    if flag_datasets is None:
-        flag_datasets = []
     if conditions is None:
         conditions = {}
+    flag_datasets = list(conditions.keys())
 
     all_fields = [ene_dataset] + flag_datasets
-    if idx is not None:
-        table = lh5.read(table_path, files, field_mask=all_fields, idx=idx)
-    else:
-        table = lh5.read(table_path, files, field_mask=all_fields)
+    table = lh5.read(table_path, files, field_mask=all_fields)
     energy_all = table[ene_dataset].nda
 
-    selection_array = ~np.isnan(energy_all)
+    if idx is not None:
+        energy_all_indexed = energy_all[idx]
+        selection_array = ~np.isnan(energy_all_indexed)
+    else:
+        selection_array = ~np.isnan(energy_all)
 
     for flag in flag_datasets:
-        flag_array = table[flag].nda
+        if idx is not None:
+            flag_array = table[flag].nda[idx]
+        else:
+            flag_array = table[flag].nda
         condition = conditions.get(flag, True)
         selection_array &= (flag_array == condition)
 
@@ -197,16 +199,21 @@ def relevant_events(
         emin, emax = energy_range
         selection_array &= (energy_all >= emin) & (energy_all <= emax)
 
-    selected_energies = energy_all[selection_array]
-    if return_index == True:
-        if idx is None:
-            selected_idxs = np.arange(len(energy_all))
-            selected_idxs = selected_idxs[selection_array]
-            return selected_energies, selected_idxs
-        else:
-            selected_idxs = idx[selection_array]
-            return selected_energies, selected_idxs
-    return selected_energies
+    if idx is not None:
+        selected_energies = energy_all_indexed[selection_array]
+        selected_idxs = idx[selection_array]
+    else:
+        selected_energies = energy_all[selection_array]
+        selected_idxs = np.arange(len(energy_all))
+        selected_idxs = selected_idxs[selection_array]
+
+    results = {
+        "energy_presel": energy_all,
+        "energy_sel": selected_energies,
+        "indices": selected_idxs,
+    }
+    
+    return results
 
 def xtalk_element(E_trig, E_response, baseline_value):
     # Check if baseline_value is numerical

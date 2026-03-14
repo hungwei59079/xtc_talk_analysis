@@ -25,14 +25,15 @@ def get_single_baseline_energy(new_hit_list, new_dsp_list, detector, detector_id
         success: bool indicating if the computation succeeded
     """
     try:
-        energies, idxs = relevant_events(
+        results = relevant_events(
             table_path=f"ch{detector}/hit/",
             files=new_hit_list,
             ene_dataset="cuspEmax_ctc_cal",
             flag_datasets=flag_datasets,
             conditions=flag_conditions,
-            return_index=True
         )
+        idxs = results["indices"]
+        
         table = read(f"ch{detector}/dsp/", new_dsp_list, field_mask=["trapTmin", "trapTmax"], idx=idxs)
         trapTmin = table["trapTmin"].nda
         trapTmax = table["trapTmax"].nda

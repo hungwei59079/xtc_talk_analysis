@@ -50,8 +50,8 @@ if args.data_dict_path is not None:
     print(f"Loaded data filter from: {data_dict_path}")
     print(f"Filtering to periods/runs: {data_dict}")
 
-# new_hit_list, new_dsp_list, chn_id = files_and_chnid(config, data_dict)
-
+new_hit_list, new_dsp_list, chn_id = files_and_chnid(config, data_dict)
+"""
 period, run = "p16", "r008"
 data_path = "/global/cfs/cdirs/m2676/data/lngs/l200/public/prodenv/prod-blind"
 prod_dir = f"{data_path}/auto/v2.0.0"
@@ -64,12 +64,12 @@ time_string = new_dsp_list[0].split("/")[-1].split("-")[4]
 chmap = lmeta.hardware.configuration.channelmaps.on(time_string)
 # config = lmeta.dataprod.config.on(time_string)
 geds = [ch for ch in chmap.keys() if chmap[ch]['system']=='geds']
-
+"""
 print("File listing complete.")
 
 j1 = int(args.channel_number)
-# raw_id_1 = chn_id[j1]
-raw_id_1 = chmap[geds[j1]]['daq']['rawid']
+raw_id_1 = chn_id[j1]
+# raw_id_1 = chmap[geds[j1]]['daq']['rawid']
 
 # pre-selection data (with NaN filtering only)
 energy_1_raw = lh5.read(f"ch{raw_id_1}/hit/cuspEmax_ctc_cal", new_hit_list).nda
@@ -88,18 +88,17 @@ trapTmin_1_presel = trapTmin_1_raw[min_mask_cusp_raw]
 trig_extract_complete = False
 
 try:
-    
-    energy_1_sel, idxs = relevant_events(
+    results = relevant_events(
         table_path=f"ch{raw_id_1}/hit/",
         files=new_hit_list,
         ene_dataset="cuspEmax_ctc_cal",
         # flag_datasets=config.baseline_flag_datasets,
-        flag_datasets=config.xtalk_flag_trigger_datasets,
         # conditions=config.baseline_conditions,
         conditions=config.xtalk_flag_trigger_conditions,
         energy_range=(1500, 4500),
-        return_index=True
     )
+    idxs = results["indices"]
+    energy_1_sel = results["energy_sel"]
     
     #thr = 1500
     #energy_1 = lh5.read(f"ch{raw_id_1}/hit/cuspEmax_ctc_cal", new_hit_list).nda
