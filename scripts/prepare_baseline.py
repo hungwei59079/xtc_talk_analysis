@@ -4,46 +4,7 @@ import numpy as np
 import argparse
 import json
 from datetime import datetime
-from xtc_utils import files_and_chnid, relevant_events, XTCConfig
-
-
-def get_single_baseline_energy(new_hit_list, new_dsp_list, detector, detector_idx, flag_datasets, flag_conditions):
-    """
-    Computes mean baseline energy for a single detector.
-
-    Args:
-        new_hit_list: list of hit files
-        new_dsp_list: list of dsp files
-        detector: detector channel ID
-        detector_idx: index of detector in the channel list
-        flag_datasets: list of flag dataset names for filtering
-        flag_conditions: dict of conditions for filtering
-
-    Returns:
-        positive_baseline: mean positive baseline (trapTmax), or np.nan if failed
-        negative_baseline: mean negative baseline (trapTmin), or np.nan if failed
-        success: bool indicating if the computation succeeded
-    """
-    try:
-        results = relevant_events(
-            table_path=f"ch{detector}/hit/",
-            files=new_hit_list,
-            ene_dataset="cuspEmax_ctc_cal",
-            flag_datasets=flag_datasets,
-            conditions=flag_conditions,
-        )
-        idxs = results["indices"]
-        
-        table = read(f"ch{detector}/dsp/", new_dsp_list, field_mask=["trapTmin", "trapTmax"], idx=idxs)
-        trapTmin = table["trapTmin"].nda
-        trapTmax = table["trapTmax"].nda
-        positive_baseline = np.mean(trapTmax)
-        negative_baseline = np.mean(trapTmin)
-        print(f"✅ Baseline energy evaluated for detector #{detector_idx} (ID={detector}).")
-        return positive_baseline, negative_baseline, True
-    except Exception as e:
-        print(f"❌ Failed for detector #{detector_idx} (ID={detector}): {e}")
-        return np.nan, np.nan, False
+from xtc_utils import files_and_chnid, EventSelector, XTCConfig
 
 parser = argparse.ArgumentParser()
 parser.add_argument(
@@ -75,10 +36,13 @@ args = parser.parse_args()
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = Path(args.config_path)
-OUTDIR = REPO_ROOT / "temp_results" / "parameters" / "baseline_individual"
-OUTDIR.mkdir(parents=True, exist_ok=True)
-
-# Load configuration using XTCConfig
+OUTDIR = REPO_ROOT / "temp_results" / "parameters" 
+JSONDIR = OUTDIR / "json"
+TRAPTMIN_DIR = OUTDIR / "trapTmin"
+TRAPTMAX_DIR = OUTDIR / "trapTmax"
+TRAPTMIN_DIR.mkdir(parents=True, exist_ok=True)
+TRAPTMAX_DIR.mkdir(parents=True, exist_ok=True)
+JSONDIR.mkdir(parents=True, exist_ok=True)
 config = XTCConfig(CONFIG_PATH, args.config_name)
 
 # Load data_dict from file if provided
@@ -103,10 +67,29 @@ detector = chn_id[detector_index]
 print(f"Processing detector index {detector_index} (channel ID: {detector})")
 
 # Compute baseline for this single detector
-positive_baseline, negative_baseline, success = get_single_baseline_energy(
-    new_hit_list, new_dsp_list, detector, detector_index,
-    config.baseline_flag_datasets, config.baseline_conditions
+cuspEmax_selection = EventSelector(
+    table_path=f"ch{detector}/hit/",
+    files=new_hit_list,
+    ene_dataset="cuspEmax_ctc_cal",
+    conditions=config.baseline_conditions,
 )
+trapTmax_selection = EventSelector(
+    table_path=f"ch{detector}/dsp/",
+    files=new_dsp_list,
+    ene_dataset="trapTmax",
+    idx=cuspEmax_selection.selected_idxs
+)
+trapTmin_selection = EventSelector(
+    table_path=f"ch{detector}/dsp/",
+    files=new_dsp_list,
+    ene_dataset="trapTmin",
+    idx=cuspEmax_selection.selected_idxs
+)
+
+positive_baseline = np.mean(trapTmax_selection.selected_energies)
+negative_baseline = np.mean(trapTmin_selection.selected_energies)
+trapTmax_selection.draw(TRAPTMAX_DIR / f"trapTmax_detector_{detector_index}.png")
+trapTmin_selection.draw(TRAPTMIN_DIR / f"trapTmin_detector_{detector_index}.png")
 
 # Save individual results
 result = {
@@ -114,7 +97,6 @@ result = {
     "detector_id": detector,
     "positive_baseline": float(positive_baseline) if not np.isnan(positive_baseline) else None,
     "negative_baseline": float(negative_baseline) if not np.isnan(negative_baseline) else None,
-    "success": success,
     "config_path": str(CONFIG_PATH.resolve()),
     "config_name": args.config_name,
     "baseline_flags": config.baseline_flag_datasets,
@@ -123,7 +105,7 @@ result = {
     "processed_at": datetime.now().isoformat()
 }
 
-out_path = OUTDIR / f"baseline_{detector_index:04d}.json"
+out_path = JSONDIR / f"baseline_{detector_index:04d}.json"
 with open(out_path, "w") as f:
     json.dump(result, f, indent=2)
 print(f"Result saved to: {out_path}")

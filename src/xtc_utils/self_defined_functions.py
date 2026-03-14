@@ -146,45 +146,38 @@ def files_and_chnid(config: XTCConfig, data_dict: dict = None):
 
 class EventSelector:
     def __init__(self, table_path, files, ene_dataset, conditions=None, energy_range=None, idx=None):
-        self.table_path = table_path
-        self.files = files
-        self.ene_dataset = ene_dataset
-        self.conditions = conditions
-        self.energy_range = energy_range
-        self.idx = idx
-
-        flag_datasets = list(conditions.keys())
+        flag_datasets = list(conditions.keys()) if conditions is not None else []
         all_fields = [ene_dataset] + flag_datasets
-        self.table = lh5.read(table_path, files, field_mask=all_fields)
-        self.energy_all = self.table[ene_dataset].nda
+        table = lh5.read(table_path, files, field_mask=all_fields)
+        self.energy_all = table[ene_dataset].nda
 
         if idx is not None:
-            self.energy_all_indexed = self.energy_all[idx]
-            self.selection_array = ~np.isnan(self.energy_all_indexed)
+            energy_all_indexed = self.energy_all[idx]
+            selection_array = ~np.isnan(energy_all_indexed)
         else:
-            self.selection_array = ~np.isnan(self.energy_all)
+            selection_array = ~np.isnan(self.energy_all)
         
         for flag in flag_datasets:
             if idx is not None:
-                flag_array = self.table[flag].nda[idx]
+                flag_array = table[flag].nda[idx]
             else:
-                flag_array = self.table[flag].nda
+                flag_array = table[flag].nda
             condition = conditions.get(flag, True)
-            self.selection_array &= (flag_array == condition)
+            selection_array &= (flag_array == condition)
 
         if energy_range is not None:
             emin, emax = energy_range
-            self.selection_array &= (self.energy_all >= emin) & (self.energy_all <= emax)
+            selection_array &= (self.energy_all >= emin) & (self.energy_all <= emax)
         
         if idx is not None:
-            self.selected_energies = self.energy_all_indexed[self.selection_array]
-            self.selected_idxs = idx[self.selection_array]
+            self.selected_energies = energy_all_indexed[selection_array]
+            self.selected_idxs = idx[selection_array]
         else:
-            self.selected_energies = self.energy_all[self.selection_array]
+            self.selected_energies = self.energy_all[selection_array]
             self.selected_idxs = np.arange(len(self.energy_all))
-            self.selected_idxs = self.selected_idxs[self.selection_array]
+            self.selected_idxs = self.selected_idxs[selection_array]
 
-    def plot_results(self, fig_path, y_scale='log'):
+    def draw(self, fig_path, y_scale='log'):
         plt.figure(figsize=(10, 6))
         plt.hist(self.energy_all, bins=100, alpha=0.5, label=f"Pre-selection({len(self.energy_all)})")
         plt.hist(self.selected_energies, bins=100, alpha=0.5, label=f"Selected({len(self.selected_energies)})")
@@ -196,6 +189,27 @@ class EventSelector:
         plt.savefig(fig_path)
         plt.close()
 
+
+def xtalk_element(E_trig, E_response, baseline_value):
+    # Check if baseline_value is numerical
+    if not isinstance(baseline_value, (int, float)):
+        raise TypeError("baseline_value must be a numerical type (int or float).")
+    
+    # Case 1: both inputs are lists
+    if isinstance(E_trig, np.ndarray) and isinstance(E_response, np.ndarray):
+        if len(E_trig) != len(E_response):
+            raise ValueError("E_trig and E_response must have the same length.")
+        baseline = np.full(len(E_trig), baseline_value)
+        return (E_response - baseline) / E_trig * 100
+        # return E_response / E_trig * 100
+    
+    # Case 2: all inputs are scalars (numerical values)
+    elif isinstance(E_trig, (int, float)) and isinstance(E_response, (int, float)):
+        return (E_response - baseline_value) / E_trig * 100
+    
+    # Case 3: unsupported input types
+    else:
+        raise TypeError("E_trig and E_response must either both be lists of equal length or both be numerical values.")
 
 # To be deprecated: use the EventSelector class instead for better modularity and reusability.
 def relevant_events(
@@ -269,26 +283,5 @@ def relevant_events(
     }
     
     return results
-
-def xtalk_element(E_trig, E_response, baseline_value):
-    # Check if baseline_value is numerical
-    if not isinstance(baseline_value, (int, float)):
-        raise TypeError("baseline_value must be a numerical type (int or float).")
-    
-    # Case 1: both inputs are lists
-    if isinstance(E_trig, np.ndarray) and isinstance(E_response, np.ndarray):
-        if len(E_trig) != len(E_response):
-            raise ValueError("E_trig and E_response must have the same length.")
-        baseline = np.full(len(E_trig), baseline_value)
-        return (E_response - baseline) / E_trig * 100
-        # return E_response / E_trig * 100
-    
-    # Case 2: all inputs are scalars (numerical values)
-    elif isinstance(E_trig, (int, float)) and isinstance(E_response, (int, float)):
-        return (E_response - baseline_value) / E_trig * 100
-    
-    # Case 3: unsupported input types
-    else:
-        raise TypeError("E_trig and E_response must either both be lists of equal length or both be numerical values.")
 
 

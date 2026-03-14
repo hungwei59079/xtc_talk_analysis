@@ -1,46 +1,27 @@
-"""
-Merge individual baseline results from batch processing into combined arrays.
-
-This script reads all baseline_XXXX.json files from the individual results directory
-and combines them into the standard format (positive_baseline.npy, negative_baseline.npy, 
-skipped_channels.npy) expected by downstream scripts like xtalk_batch.py.
-"""
-
 from pathlib import Path
 import numpy as np
 import json
 import argparse
 from datetime import datetime
+from xtc_utils import XTCConfig
 
-
-def merge_baseline_results(input_dir: Path, output_dir: Path, expected_count: int = None):
-    """
-    Merge individual baseline JSON files into combined numpy arrays.
-    
-    Args:
-        input_dir: Directory containing baseline_XXXX.json files
-        output_dir: Directory to write merged results
-        expected_count: Expected number of detectors (optional, for validation)
-    
-    Returns:
-        dict with summary statistics
-    """
-    # Find all individual result files
+def merge_baseline_results(input_dir: Path, output_dir: Path, config: XTCConfig):
     result_files = sorted(input_dir.glob("baseline_*.json"))
-    
     if not result_files:
         raise FileNotFoundError(f"No baseline_*.json files found in {input_dir}")
-    
     print(f"Found {len(result_files)} individual result files")
     
     # Load all results
     results = {}
-    metadata_sample = None
+    # metadata_sample = None
     
     for fpath in result_files:
         with open(fpath) as f:
             data = json.load(f)
-        idx = data["detector_index"]
+        if config.config_name != data.get("config_name") or :
+            print("json file for other configs detected. Something seems off.")
+            continue
+            idx = data["detector_index"]
         results[idx] = data
         if metadata_sample is None:
             metadata_sample = {
@@ -55,10 +36,9 @@ def merge_baseline_results(input_dir: Path, output_dir: Path, expected_count: in
     indices = sorted(results.keys())
     max_idx = max(indices)
     
-    if expected_count is not None:
-        if len(results) != expected_count:
-            print(f"⚠️  Warning: Expected {expected_count} results, found {len(results)}")
-        max_idx = expected_count - 1
+    if len(results) != config.number_of_detectors:
+        print(f"⚠️  Warning: Expected {config.number_of_detectors} results, found {len(results)}")
+    max_idx = config.number_of_detectors - 1
     
     # Check for missing indices
     expected_indices = set(range(max_idx + 1))
@@ -142,7 +122,7 @@ if __name__ == "__main__":
         type=str,
         default=None,
         help="Directory containing individual baseline_XXXX.json files. "
-             "Default: temp_results/parameters/baseline_individual",
+             "Default: temp_results/parameters/json",
     )
     parser.add_argument(
         "--output_dir",
@@ -152,24 +132,36 @@ if __name__ == "__main__":
              "Default: temp_results/parameters",
     )
     parser.add_argument(
-        "--expected_count",
-        type=int,
-        default=None,
-        help="Expected number of detectors (for validation). "
-             "If not provided, inferred from the highest index found.",
+        "--config_path",
+        type=str,
+        required=True,
+        help="Path to the configuration JSON file.",
     )
+    parser.add_argument(
+        "--config_name",
+        type=str,
+        required=True,
+        help="Name of the configuration to use from the JSON file.",
+    )
+    parser.add_argument(
+    "--data_dict_path",
+    type=str,
+    default=None,
+    )
+
     args = parser.parse_args()
     
     REPO_ROOT = Path(__file__).resolve().parents[1]
-    
-    input_dir = Path(args.input_dir) if args.input_dir else REPO_ROOT / "temp_results" / "parameters" / "baseline_individual"
+    input_dir = Path(args.input_dir) if args.input_dir else REPO_ROOT / "temp_results" / "parameters" / "json"
     output_dir = Path(args.output_dir) if args.output_dir else REPO_ROOT / "temp_results" / "parameters"
+    CONFIG_PATH = Path(args.config_path)
+    config = XTCConfig(CONFIG_PATH, args.config_name)
     
     print(f"Input directory:  {input_dir}")
     print(f"Output directory: {output_dir}")
     print()
     
-    summary = merge_baseline_results(input_dir, output_dir, args.expected_count)
+    summary = merge_baseline_results(input_dir, output_dir, config)
     
     print()
     print("=" * 50)
