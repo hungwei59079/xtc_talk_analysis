@@ -3,6 +3,7 @@ import numpy as np
 from lgdo import lh5
 from dbetto import TextDB, Props
 from pathlib import Path
+import matplotlib.pyplot as plt
 
 from .config import XTCConfig
 
@@ -143,6 +144,60 @@ def files_and_chnid(config: XTCConfig, data_dict: dict = None):
         
     return new_hit_list, new_dsp_list, chn_id
 
+class EventSelector:
+    def __init__(self, table_path, files, ene_dataset, conditions=None, energy_range=None, idx=None):
+        self.table_path = table_path
+        self.files = files
+        self.ene_dataset = ene_dataset
+        self.conditions = conditions
+        self.energy_range = energy_range
+        self.idx = idx
+
+        flag_datasets = list(conditions.keys())
+        all_fields = [ene_dataset] + flag_datasets
+        self.table = lh5.read(table_path, files, field_mask=all_fields)
+        self.energy_all = self.table[ene_dataset].nda
+
+        if idx is not None:
+            self.energy_all_indexed = self.energy_all[idx]
+            self.selection_array = ~np.isnan(self.energy_all_indexed)
+        else:
+            self.selection_array = ~np.isnan(self.energy_all)
+        
+        for flag in flag_datasets:
+            if idx is not None:
+                flag_array = self.table[flag].nda[idx]
+            else:
+                flag_array = self.table[flag].nda
+            condition = conditions.get(flag, True)
+            self.selection_array &= (flag_array == condition)
+
+        if energy_range is not None:
+            emin, emax = energy_range
+            self.selection_array &= (self.energy_all >= emin) & (self.energy_all <= emax)
+        
+        if idx is not None:
+            self.selected_energies = self.energy_all_indexed[self.selection_array]
+            self.selected_idxs = idx[self.selection_array]
+        else:
+            self.selected_energies = self.energy_all[self.selection_array]
+            self.selected_idxs = np.arange(len(self.energy_all))
+            self.selected_idxs = self.selected_idxs[self.selection_array]
+
+    def plot_results(self, fig_path, y_scale='log'):
+        plt.figure(figsize=(10, 6))
+        plt.hist(self.energy_all, bins=100, alpha=0.5, label=f"Pre-selection({len(self.energy_all)})")
+        plt.hist(self.selected_energies, bins=100, alpha=0.5, label=f"Selected({len(self.selected_energies)})")
+        plt.xlabel('Energy')
+        plt.ylabel('Counts')
+        plt.yscale(y_scale)
+        plt.title('Energy Distribution Before and After Selection')
+        plt.legend()
+        plt.savefig(fig_path)
+        plt.close()
+
+
+# To be deprecated: use the EventSelector class instead for better modularity and reusability.
 def relevant_events(
     table_path,
     files,
