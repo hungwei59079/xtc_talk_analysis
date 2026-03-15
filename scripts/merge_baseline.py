@@ -5,69 +5,43 @@ import argparse
 from datetime import datetime
 from xtc_utils import XTCConfig
 
-def merge_baseline_results(input_dir: Path, output_dir: Path, config: XTCConfig):
+def merge_baseline_results(input_dir: Path, output_dir: Path):
     result_files = sorted(input_dir.glob("baseline_*.json"))
     if not result_files:
         raise FileNotFoundError(f"No baseline_*.json files found in {input_dir}")
     print(f"Found {len(result_files)} individual result files")
-    
-    # Load all results
-    results = {}
-    # metadata_sample = None
-    
-    for fpath in result_files:
-        with open(fpath) as f:
-            data = json.load(f)
-        if config.config_name != data.get("config_name") or :
-            print("json file for other configs detected. Something seems off.")
-            continue
-            idx = data["detector_index"]
-        results[idx] = data
-        if metadata_sample is None:
-            metadata_sample = {
-                "config_path": data.get("config_path"),
-                "config_name": data.get("config_name"),
-                "data_filter": data.get("data_filter"),
-                "baseline_flags": data.get("baseline_flags"),
-                "baseline_conditions": data.get("baseline_conditions")
-            }
-    
-    # Determine the range of indices
-    indices = sorted(results.keys())
-    max_idx = max(indices)
-    
-    if len(results) != config.number_of_detectors:
-        print(f"⚠️  Warning: Expected {config.number_of_detectors} results, found {len(results)}")
-    max_idx = config.number_of_detectors - 1
-    
-    # Check for missing indices
-    expected_indices = set(range(max_idx + 1))
-    actual_indices = set(indices)
-    missing_indices = expected_indices - actual_indices
-    
-    if missing_indices:
-        print(f"⚠️  Warning: Missing results for indices: {sorted(missing_indices)}")
-    
-    # Build arrays
-    n_detectors = max_idx + 1
+
+    with open(result_files[0]) as f:
+        data_ref = json.load(f)
+        parameters_ref = data_ref["parameters"]
+        
+    config = XTCConfig(parameters_ref["config_path"], parameters_ref["config_name"])
+    n_detectors = config.number_of_detectors
+        
     positive_baseline = np.full(n_detectors, np.nan)
     negative_baseline = np.full(n_detectors, np.nan)
     skipped_channels = []
     
-    for idx, data in results.items():
-        if idx >= n_detectors:
-            print(f"⚠️  Warning: Index {idx} exceeds expected count, skipping")
-            continue
-            
-        if data["success"]:
-            positive_baseline[idx] = data["positive_baseline"]
-            negative_baseline[idx] = data["negative_baseline"]
-        else:
-            skipped_channels.append(data["detector_id"])
+    #index catalog - used to see if indices are missing
+    idx_catalog = set()
     
-    # Also mark missing indices as skipped (we don't have their detector IDs, so use -1 as placeholder)
-    for idx in missing_indices:
-        print(f"⚠️  Index {idx} has no result file, marking as skipped") #FIXME: This looks weird? We didn't really mark anything?
+    for fpath in result_files:
+        with open(fpath) as f:
+            data = json.load(f)
+        idx = data["detector_index"]
+        idx_catalog.add(idx)
+        if data["parameters"] != parameters_ref:
+            raise RuntimeError("Data corrupted: json from other runs detected")
+        if not data["success"]:
+            skipped_channels.append(data["detector_id"])
+            continue
+        positive_baseline[idx] = data["positive_baseline"]
+        negative_baseline[idx] = data["negative_baseline"]
+
+    missing_indices = set(np.arange(n_detectors)) - idx_catalog
+    if missing_indices:
+        print(f"Missing indices: {missing_indices}")
+        raise RuntimeError("Indices Missing. Perhaps baseline computation crashed. Check log for more details.")
     
     # Save merged results
     output_dir.mkdir(parents=True, exist_ok=True)
@@ -78,7 +52,6 @@ def merge_baseline_results(input_dir: Path, output_dir: Path, config: XTCConfig)
     if skipped_channels:
         np.save(output_dir / "skipped_channels.npy", np.array(skipped_channels))
     else:
-        # Save empty array if no skipped channels
         np.save(output_dir / "skipped_channels.npy", np.array([], dtype=int))
     
     # Save metadata
@@ -86,16 +59,11 @@ def merge_baseline_results(input_dir: Path, output_dir: Path, config: XTCConfig)
     n_failed = len(skipped_channels)
     
     metadata = {
-        "config_path": metadata_sample["config_path"],
-        "config_name": metadata_sample["config_name"],
-        "data_filter": metadata_sample["data_filter"],
-        "baseline_flags": metadata_sample["baseline_flags"],
-        "baseline_conditions": metadata_sample["baseline_conditions"],
+        "parameters": parameters_ref,
         "merged_at": datetime.now().isoformat(),
         "total_detectors": n_detectors,
         "successful": int(n_success),
         "failed": n_failed,
-        "missing_indices": sorted(missing_indices) if missing_indices else [],
         "skipped_channel_ids": skipped_channels,
     }
     
@@ -132,18 +100,6 @@ if __name__ == "__main__":
              "Default: temp_results/parameters",
     )
     parser.add_argument(
-        "--config_path",
-        type=str,
-        required=True,
-        help="Path to the configuration JSON file.",
-    )
-    parser.add_argument(
-        "--config_name",
-        type=str,
-        required=True,
-        help="Name of the configuration to use from the JSON file.",
-    )
-    parser.add_argument(
     "--data_dict_path",
     type=str,
     default=None,
@@ -152,16 +108,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
     
     REPO_ROOT = Path(__file__).resolve().parents[1]
-    input_dir = Path(args.input_dir) if args.input_dir else REPO_ROOT / "temp_results" / "parameters" / "json"
-    output_dir = Path(args.output_dir) if args.output_dir else REPO_ROOT / "temp_results" / "parameters"
-    CONFIG_PATH = Path(args.config_path)
-    config = XTCConfig(CONFIG_PATH, args.config_name)
+    input_dir = Path(args.input_dir) if args.input_dir else REPO_ROOT / "temp_results" / "parameters" / "baseline_individuals" / "json"
+    output_dir = Path(args.output_dir) if args.output_dir else REPO_ROOT / "temp_results" / "parameters" 
     
     print(f"Input directory:  {input_dir}")
     print(f"Output directory: {output_dir}")
     print()
     
-    summary = merge_baseline_results(input_dir, output_dir, config)
+    summary = merge_baseline_results(input_dir, output_dir)
     
     print()
     print("=" * 50)

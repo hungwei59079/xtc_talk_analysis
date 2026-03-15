@@ -36,7 +36,7 @@ args = parser.parse_args()
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = Path(args.config_path)
-OUTDIR = REPO_ROOT / "temp_results" / "parameters" 
+OUTDIR = REPO_ROOT / "temp_results" / "parameters" / "baseline_individuals"
 JSONDIR = OUTDIR / "json"
 TRAPTMIN_DIR = OUTDIR / "trapTmin"
 TRAPTMAX_DIR = OUTDIR / "trapTmax"
@@ -67,29 +67,38 @@ detector = chn_id[detector_index]
 print(f"Processing detector index {detector_index} (channel ID: {detector})")
 
 # Compute baseline for this single detector
-cuspEmax_selection = EventSelector(
-    table_path=f"ch{detector}/hit/",
-    files=new_hit_list,
-    ene_dataset="cuspEmax_ctc_cal",
-    conditions=config.baseline_conditions,
-)
-trapTmax_selection = EventSelector(
-    table_path=f"ch{detector}/dsp/",
-    files=new_dsp_list,
-    ene_dataset="trapTmax",
-    idx=cuspEmax_selection.selected_idxs
-)
-trapTmin_selection = EventSelector(
-    table_path=f"ch{detector}/dsp/",
-    files=new_dsp_list,
-    ene_dataset="trapTmin",
-    idx=cuspEmax_selection.selected_idxs
-)
+successful_extraction = True
+try:
+    cuspEmax_selection = EventSelector(
+        table_path=f"ch{detector}/hit/",
+        files=new_hit_list,
+        ene_dataset="cuspEmax_ctc_cal",
+        conditions=config.baseline_conditions,
+    )
+    trapTmax_selection = EventSelector(
+        table_path=f"ch{detector}/dsp/",
+        files=new_dsp_list,
+        ene_dataset="trapTmax",
+        idx=cuspEmax_selection.selected_idxs
+    )
+    trapTmin_selection = EventSelector(
+        table_path=f"ch{detector}/dsp/",
+        files=new_dsp_list,
+        ene_dataset="trapTmin",
+        idx=cuspEmax_selection.selected_idxs
+    )
 
-positive_baseline = np.mean(trapTmax_selection.selected_energies)
-negative_baseline = np.mean(trapTmin_selection.selected_energies)
-trapTmax_selection.draw(TRAPTMAX_DIR / f"trapTmax_detector_{detector_index}.png")
-trapTmin_selection.draw(TRAPTMIN_DIR / f"trapTmin_detector_{detector_index}.png")
+    positive_baseline = np.mean(trapTmax_selection.selected_energies)
+    negative_baseline = np.mean(trapTmin_selection.selected_energies)
+    trapTmax_selection.draw(TRAPTMAX_DIR / f"trapTmax_detector_{detector_index}.png")
+    trapTmin_selection.draw(TRAPTMIN_DIR / f"trapTmin_detector_{detector_index}.png")
+    
+except Exception as e:
+    print(f"exception occurred at detector {detector_index}: {e}")
+    successful_extraction = False
+    positive_baseline = np.nan
+    negative_baseline = np.nan
+    
 
 # Save individual results
 result = {
@@ -97,12 +106,15 @@ result = {
     "detector_id": detector,
     "positive_baseline": float(positive_baseline) if not np.isnan(positive_baseline) else None,
     "negative_baseline": float(negative_baseline) if not np.isnan(negative_baseline) else None,
-    "config_path": str(CONFIG_PATH.resolve()),
-    "config_name": args.config_name,
-    "baseline_flags": config.baseline_flag_datasets,
-    "baseline_conditions": config.baseline_conditions,
-    "data_filter": data_dict, 
-    "processed_at": datetime.now().isoformat()
+    "success": successful_extraction,
+    "processed_at": datetime.now().isoformat(),
+    "parameters": { 
+        "config_path": str(CONFIG_PATH.resolve()),
+        "config_name": args.config_name,
+        "baseline_flags": config.baseline_flag_datasets,
+        "baseline_conditions": config.baseline_conditions,
+        "data_filter": data_dict, 
+    }
 }
 
 out_path = JSONDIR / f"baseline_{detector_index:04d}.json"

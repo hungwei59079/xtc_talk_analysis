@@ -16,7 +16,7 @@
 # -----------------------------
 # Modify these variables as needed
 CONFIG_PATH="configs/xtc_config.json"
-CONFIG_NAME="xtc_old"
+CONFIG_NAME="xtc_p16"
 # Optional: path to data filter JSON file (comment out if not needed)
 # DATA_DICT_PATH="configs/data_filter_example.json"
 
