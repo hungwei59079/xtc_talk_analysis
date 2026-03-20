@@ -16,8 +16,8 @@ class XTCMatrix:
         self.scenarios = kwargs.get("scenarios", set())
 
         # I/O Related
-        self.load_path = Path(kwargs.get("load_path", None))
-        self.save_path = Path(kwargs.get("save_path", None))
+        self.load_path = Path(kwargs.get("load_path")) if kwargs.get("load_path") else None
+        self.save_path = Path(kwargs.get("save_path")) if kwargs.get("save_path") else None
         self.imagename = kwargs.get("filename", f"{label}_xtalk_matrix.png")
         self.csvname = kwargs.get("csvname", f"{label}_xtalk_matrix.csv")
 
