@@ -1,0 +1,32 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import json
+from pathlib import Path
+from xtc_utils import files_and_chnid, XTCConfig, XTCMatrix
+
+REPO_ROOT = Path(__file__).resolve().parents[1]
+OUT_DIR = REPO_ROOT / "results"
+OUT_DIR.mkdir(parents=True, exist_ok=True)
+PARAMS_PATH = REPO_ROOT / "temp_results"/ "parameters"
+IN_DIR = REPO_ROOT / "temp_results"/ "fit_results"
+metadata_file = IN_DIR / "xtalk_metadata.json"
+with open(metadata_file, "r") as f:
+    xtalk_metadata = json.load(f)
+parameters = xtalk_metadata["parameters"]
+number_of_detectors = xtalk_metadata["number_of_detectors"]
+config_path_str = parameters["config_path"]
+config_name = parameters["config_name"]
+data_filter = parameters["data_filter"]
+
+CONFIG_PATH = Path(config_path_str)
+config = XTCConfig(CONFIG_PATH, config_name)
+
+new_hit_list, new_dsp_list, chn_id = files_and_chnid(config, data_dict=data_filter)
+skipped_channels = set(np.load(PARAMS_PATH / "skipped_channels.npy"))
+
+for label in ["neg", "pos", "neg_restrained", "pos_restrained"]:
+    xtalk_matrix = XTCMatrix(number_of_detectors, label)
+    xtalk_matrix.load(chn_id, skipped_channels, path=IN_DIR)
+    xtalk_matrix.save_csv(path=OUT_DIR)
+    xtalk_matrix.plot(path=OUT_DIR)
+    xtalk_matrix.diagnose()
