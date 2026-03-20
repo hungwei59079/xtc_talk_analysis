@@ -19,6 +19,10 @@
 REPO_ROOT=$SLURM_SUBMIT_DIR
 cd "$REPO_ROOT" || exit 1
 
+metadata_file=temp_results/fit_results/
+if [ ! -f $metadata_file ]; then
+    cp temp_results/histograms/xtalk_metadata.json $metadata_file
+fi
 source .venv/bin/activate
 
 mkdir -p logs

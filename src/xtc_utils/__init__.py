@@ -1,10 +1,10 @@
 from .self_defined_functions import (
     files_and_chnid,
     relevant_events,
-    xtalk_element,
-    EventSelector
+    xtalk_element
 )
 from .config import XTCConfig
+from .event_selector import EventSelector
 
 __all__ = [
     "files_and_chnid",

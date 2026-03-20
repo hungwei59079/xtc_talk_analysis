@@ -13,7 +13,6 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 IN_DIR = REPO_ROOT / "temp_results" / "histograms"
 OUT_DIR = REPO_ROOT / "temp_results" / "fit_results"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
-# out_dir_figs = os.path.join(base_dir, "../fit_figures")
 
 xtalk_metadata_file = IN_DIR / "xtalk_metadata.json"
 with open(xtalk_metadata_file, "r") as f:
@@ -31,16 +30,15 @@ for j2 in range(number_of_detectors):
         neg_bins = data["neg_bins"]
         pos_counts = data["pos_counts"]
         pos_bins = data["pos_bins"]
+        neg_counts_restrained = data["neg_counts_restrained"]
+        neg_bins_restrained = data["neg_bins_restrained"]
+        pos_counts_restrained = data["pos_counts_restrained"]
+        pos_bins_restrained = data["pos_bins_restrained"]
 
-    #neg_x = (neg_bins[1:]+neg_bins[:-1])/2
-    #neg_y = neg_counts
-    #pos_x = (pos_bins[1:]+pos_bins[:-1])/2
-    #pos_y = pos_counts
-
-    for label, counts, bins in [("neg", neg_counts, neg_bins), ("pos", pos_counts, pos_bins)]:
+    for label, counts, bins in [("neg", neg_counts, neg_bins), ("pos", pos_counts, pos_bins), ("neg_restrained", neg_counts_restrained, neg_bins_restrained), ("pos_restrained", pos_counts_restrained, pos_bins_restrained)]:
         total_events = np.sum(counts)
+        # Case 1: No events at all, skipping.
         if total_events == 0:
-            # No event at all, skipping.
             result = dict(success=False, reason="no_stats", A=np.nan, mu=np.nan, sigma=np.nan, total_events=total_events)
             np.savez(OUT_DIR / f"fit_{label}_{j1}_{j2}.npz", **result)
             print(f"{label}_{j1}_{j2} has no stats")
@@ -48,9 +46,8 @@ for j2 in range(number_of_detectors):
             
         x = 0.5 * (bins[1:] + bins[:-1])
         y = counts
-
+        # Case 2: less than 100 events, taking mean directly.
         if total_events < 100:
-            # Too few stats to fit with Gaussian, trace back to taking mean.
             mu = np.sum(x * y) / total_events
             sigma = np.sqrt(np.sum(y * (x - mu)**2) / total_events)
             result = dict(success=False, reason="low_stats", A=np.nan, mu=mu, sigma=sigma, total_events=total_events)
@@ -69,6 +66,7 @@ for j2 in range(number_of_detectors):
         x_fit = x[mask]
         y_fit = y[mask]
 
+        #Case 3: Sharp distribution
         if len(x_fit) < 5:
             print(f"{label}_{j1}_{j2} has insufficient_fit_points after masking. Trace back to non_masked x,y")
             A0 = np.max(y)

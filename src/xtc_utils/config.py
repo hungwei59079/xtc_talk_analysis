@@ -64,16 +64,11 @@ class XTCConfig:
     def hit_dir_template(self) -> str:
         """Template string for hit directory paths."""
         return self._config["path_templates"]["hit_dir"]
-    
+
     @property
-    def baseline_flags(self) -> dict:
-        """Baseline flag configuration with 'flag_datasets' and 'conditions'."""
-        return self._config.get("baseline_flags", {})
-    
-    @property
-    def baseline_flag_datasets(self) -> list:
-        """List of flag dataset names for baseline selection."""
-        return self.baseline_flags.get("flag_datasets", [])
+    def baseline_conditions(self) -> dict:
+        """Dictionary of conditions for baseline flag datasets."""
+        return self._config.get("baseline_conditions", {})
     
     @property
     def xtalk_flags(self) -> dict:
@@ -81,29 +76,14 @@ class XTCConfig:
         return self._config.get("xtalk_flags", {})
     
     @property
-    def xtalk_flag_trigger_datasets(self) -> list:
-        """List of flag dataset names for crosstalk selection."""
-        return self.xtalk_flags.get("trigger_datasets", [])
-    
-    @property
     def xtalk_flag_trigger_conditions(self) -> dict:
         """Dictionary of conditions for crosstalk trigger flag datasets."""
         return self.xtalk_flags.get("trigger_conditions", {})
     
     @property
-    def xtalk_flag_response_datasets(self) -> list:
-        """List of flag dataset names for crosstalk response selection."""
-        return self.xtalk_flags.get("response_datasets", [])
-    
-    @property
     def xtalk_flag_response_conditions(self) -> dict:
         """Dictionary of conditions for crosstalk response flag datasets."""
         return self.xtalk_flags.get("response_conditions", {})
-    
-    @property
-    def baseline_conditions(self) -> dict:
-        """Dictionary of conditions for baseline flag datasets."""
-        return self.baseline_flags.get("conditions", {})
     
     @property
     def number_of_detectors(self) -> int:

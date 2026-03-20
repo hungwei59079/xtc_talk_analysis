@@ -7,85 +7,62 @@ import argparse
 from pathlib import Path
 from xtc_utils import files_and_chnid, XTCConfig
 
-parser = argparse.ArgumentParser()
-parser.add_argument(
-    "--reason",
-    help="reason of failure one wants to inspect",
-)
-args = parser.parse_args()
-
-reason_dict = {None : None,
-               "no_stats" : "no_stats",
+reason_dict = {"no_stats" : "no_stats",
                "low_stats" : "low_stats",
-              "delta" : "Optimal parameters not found: Number of calls to function has reached maxfev = 800.",
-              "sharp" : "ok but with insufficient points"}
-actual_reason = reason_dict[args.reason]
+               "Optimal parameters not found: Number of calls to function has reached maxfev = 800.": "delta" ,
+               "ok but with insufficient points" : "sharp"}
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-CONFIG_PATH = REPO_ROOT / "configs" / "xtc_config.json"
-config = XTCConfig(CONFIG_PATH, "xtc_p16")
-
-IN_DIR = REPO_ROOT / "temp_results" / "fit_results"
-SKIP_DIR = REPO_ROOT / "temp_results" / "parameters"
 OUT_DIR = REPO_ROOT / "results"
-OUT_DIR.mkdir(parents=True, exist_ok=True)
-
-xtalk_metadata_file = REPO_ROOT / "temp_results" / "histograms" / "xtalk_metadata.json"
-with open(xtalk_metadata_file, "r") as f:
+OUTDIR.mkdir(parents=True, exist_ok=True)
+PARAMS_PATH = REPO_ROOT / "temp_results"/ "parameters"
+metadata_file = PARAMS_PATH /  "fit_results" / "xtalk_metadata.json"
+with open(metadata_file, "r") as f:
     xtalk_metadata = json.load(f)
-    number_of_detectors = xtalk_metadata["number_of_detectors"]
+parameters = xtalk_metadata["parameters"]
+number_of_detectors = xtalk_metadata["total_detectors"]
+config_path_str = parameters["config_path"]
+config_name = parameters["config_name"]
+data_filter = parameters["data_filter"]
 
-neg_xtalk_matrix = np.full((number_of_detectors, number_of_detectors),np.nan)
-pos_xtalk_matrix = np.full((number_of_detectors, number_of_detectors),np.nan)
-neg_fail_list = []
-pos_fail_list = []
+CONFIG_PATH = Path(config_path_str)
+config = XTCConfig(CONFIG_PATH, config_name)
+
+xtalk_matrices = {"neg_xtalk_matrix": np.full((number_of_detectors, number_of_detectors),np.nan),
+                "pos_xtalk_matrix": np.full((number_of_detectors, number_of_detectors),np.nan),
+                "neg_restrained_xtalk_matrix": np.full((number_of_detectors, number_of_detectors),np.nan),
+                "pos_restrained_xtalk_matrix": np.full((number_of_detectors, number_of_detectors),np.nan),
+               }
+fail_dict = {"no_stats": [], "low_stats": [], "delta": [], "sharp": []}
 scenarios = set()
 
-new_hit_list, new_dsp_list, chn_id = files_and_chnid(config)
-skipped_channels = set(np.load(SKIP_DIR / "skipped_channels.npy"))
+new_hit_list, new_dsp_list, chn_id = files_and_chnid(config, data_dict=data_filter)
+skipped_channels = set(np.load(PARAMS_PATH / "skipped_channels.npy"))
 
 for j1 in range(number_of_detectors):
     raw_id_1 = chn_id[j1]
     for j2 in range(number_of_detectors):
         raw_id_2 = chn_id[j2]
-        npz_path = IN_DIR / f"fit_neg_{j1}_{j2}.npz"
-        try:
-            with np.load(npz_path) as data:
-                success = data["success"]
-                reason = str(data["reason"])
-                mu = float(data["mu"])
-                sigma = float(data["sigma"])
-        except Exception as e:
-            print(f"Exception {e} occurs. Skipping.")
-            continue
-        if reason not in scenarios:
-            scenarios.add(reason)
-        neg_xtalk_matrix[j1,j2] = mu
-        #if neg_xtalk_matrix[j1,j2] < -2:
-           # print(f"neg xtalk value for {(j1,j2)} is {neg_xtalk_matrix[j1,j2]}")
-        if reason == actual_reason:
-            if raw_id_1 not in skipped_channels and raw_id_2 not in skipped_channels:
-                if raw_id_1 != raw_id_2:
-                    neg_fail_list.append(f"{j1},{j2}")
+        for label in ["neg", "pos", "neg_restrained", "pos_restrained"]
+            npz_path = IN_DIR / f"fit_{label}_{j1}_{j2}.npz"
+            try:
+                with np.load(npz_path) as data:
+                    success = data["success"]
+                    reason = str(data["reason"])
+                    mu = float(data["mu"])
+                    sigma = float(data["sigma"])
+            except Exception as e:
+                print(f"Exception {e} occurs. Skipping.")
+                continue
+            if reason not in scenarios:
+                scenarios.add(reason)
+            xtalk_matrices[f"{label}_xtalk_matrix"][j1,j2] = mu
+            if reason == reason_dict:
+                abb_reason = reason_dict[reason]
+                if raw_id_1 not in skipped_channels and raw_id_2 not in skipped_channels:
+                    if raw_id_1 != raw_id_2:
+                        fail_dict[abb_reason].append(f"{label}_{j1}_{j2}")
 
-        npz_path = IN_DIR / f"fit_pos_{j1}_{j2}.npz"
-        with np.load(npz_path) as data:
-            success = data["success"]
-            reason = str(data["reason"])
-            mu = float(data["mu"])
-            sigma = float(data["sigma"])
-        if reason not in scenarios:
-            scenarios.add(reason)
-        pos_xtalk_matrix[j1,j2] = mu
-        #if pos_xtalk_matrix[j1,j2] > 0.05:
-            #print(f"pos xtalk value for {(j1,j2)} is {pos_xtalk_matrix[j1,j2]}")
-        if reason == actual_reason:
-            if raw_id_1 not in skipped_channels and raw_id_2 not in skipped_channels:
-                if raw_id_1 != raw_id_2:
-                    pos_fail_list.append(f"{j1},{j2}")
-
-
-print(neg_xtalk_matrix)
 print(scenarios)
 # -----------Negative Plot ---------------
 
@@ -132,11 +109,3 @@ plt.ylabel('Trigger Channel Index')
 plt.title('Positive Crosstalk Matrix Heatmap')
 plt.tight_layout()
 plt.savefig(OUT_DIR / "Pos_xtk_map_fitted.png")
-
-if actual_reason:
-    print("negative fail list:\n")
-    print(neg_fail_list)
-    print(f"total number: {len(neg_fail_list)}")
-    print("positive fail list:\n")
-    print(pos_fail_list)
-    print(f"total number: {len(pos_fail_list)}")

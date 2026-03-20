@@ -7,14 +7,9 @@
         "dsp_dir": "{xtc_dir}/generated/tier/dsp/xtc/{period}/{run}"
       },
       "number_of_detectors": 101,
-      "baseline_flags": {
-        "flag_datasets": ["is_baseline"],
-        "conditions": {"is_baseline": 63}
-      },
+      "baseline_conditions": {"is_baseline": 63},
       "xtalk_flags": {
-        "trigger_datasets": ["is_discharge", "is_valid_0vbb_old"],
         "trigger_conditions": {"is_discharge": false, "is_valid_0vbb_old": true},
-        "response_datasets": [],
         "response_conditions": {}
       },
       "available_periods": {
@@ -28,14 +23,9 @@
         "dsp_dir": "{xtc_dir}/generated/tier/dsp/ssc/{period}/{run}"
       },
       "number_of_detectors": 60,
-      "baseline_flags": {
-        "flag_datasets": ["is_empty_candidate"],
-        "conditions": {"is_empty_candidate": 63}
-      },
+      "baseline_conditions": {"is_empty_candidate": 63},
       "xtalk_flags": {
-        "trigger_datasets": ["is_highly_positive_polarity_candidate"],
         "trigger_conditions": {"is_highly_positive_polarity_candidate": 511},
-        "response_datasets": [],
         "response_conditions": {}
       },
       "available_periods": {

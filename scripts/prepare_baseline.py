@@ -1,5 +1,4 @@
 from pathlib import Path
-from lgdo.lh5 import read
 import numpy as np
 import argparse
 import json
@@ -111,7 +110,6 @@ result = {
     "parameters": { 
         "config_path": str(CONFIG_PATH.resolve()),
         "config_name": args.config_name,
-        "baseline_flags": config.baseline_flag_datasets,
         "baseline_conditions": config.baseline_conditions,
         "data_filter": data_dict, 
     }
