@@ -1,9 +1,6 @@
-import os
 import numpy as np
 import matplotlib.pyplot as plt
-import sys
 import json
-import argparse
 from pathlib import Path
 from xtc_utils import files_and_chnid, XTCConfig
 
@@ -14,7 +11,7 @@ reason_dict = {"no_stats" : "no_stats",
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = REPO_ROOT / "results"
-OUTDIR.mkdir(parents=True, exist_ok=True)
+OUT_DIR.mkdir(parents=True, exist_ok=True)
 PARAMS_PATH = REPO_ROOT / "temp_results"/ "parameters"
 metadata_file = PARAMS_PATH /  "fit_results" / "xtalk_metadata.json"
 with open(metadata_file, "r") as f:
@@ -43,8 +40,8 @@ for j1 in range(number_of_detectors):
     raw_id_1 = chn_id[j1]
     for j2 in range(number_of_detectors):
         raw_id_2 = chn_id[j2]
-        for label in ["neg", "pos", "neg_restrained", "pos_restrained"]
-            npz_path = IN_DIR / f"fit_{label}_{j1}_{j2}.npz"
+        for label in ["neg", "pos", "neg_restrained", "pos_restrained"]:
+            npz_path = PARAMS_PATH / "fit_results" / f"fit_{label}_{j1}_{j2}.npz"
             try:
                 with np.load(npz_path) as data:
                     success = data["success"]
@@ -64,48 +61,56 @@ for j1 in range(number_of_detectors):
                         fail_dict[abb_reason].append(f"{label}_{j1}_{j2}")
 
 print(scenarios)
-# -----------Negative Plot ---------------
 
-# Set up value range and colormap
-vmin = -0.3  # red
-vmax = 0.1   # blue
-cmap = plt.cm.jet_r  # matches your uploaded colorbar
+plot_settings = {
+    "neg_xtalk_matrix": {
+        "vmin": -0.3,
+        "vmax": 0.1,
+        "title": "Negative Crosstalk Matrix Heatmap",
+        "cbar_label": "Negative Xtalk Value (%)",
+        "filename": "Neg_xtk_map_fitted.png",
+    },
+    "pos_xtalk_matrix": {
+        "vmin": -0.07,
+        "vmax": 0.3,
+        "title": "Positive Crosstalk Matrix Heatmap",
+        "cbar_label": "Positive Xtalk Value (%)",
+        "filename": "Pos_xtk_map_fitted.png",
+    },
+    "neg_restrained_xtalk_matrix": {
+        "vmin": -0.3,
+        "vmax": 0.1,
+        "title": "Negative Restrained Crosstalk Matrix Heatmap",
+        "cbar_label": "Negative Restrained Xtalk Value (%)",
+        "filename": "Neg_restrained_xtk_map_fitted.png",
+    },
+    "pos_restrained_xtalk_matrix": {
+        "vmin": -0.07,
+        "vmax": 0.3,
+        "title": "Positive Restrained Crosstalk Matrix Heatmap",
+        "cbar_label": "Positive Restrained Xtalk Value (%)",
+        "filename": "Pos_restrained_xtk_map_fitted.png",
+    },
+}
 
-# Create the plot
-plt.figure(figsize=(8, 6))
-im = plt.imshow(neg_xtalk_matrix, origin='lower', cmap=cmap, vmin=vmin, vmax=vmax)
+cmap = plt.cm.jet_r
 
-# Colorbar
-cbar = plt.colorbar(im)
-cbar.set_label('Negative Xtalk Value (%)')
+for matrix_key, cfg in plot_settings.items():
+    plt.figure(figsize=(8, 6))
+    im = plt.imshow(
+        xtalk_matrices[matrix_key],
+        origin='lower',
+        cmap=cmap,
+        vmin=cfg["vmin"],
+        vmax=cfg["vmax"],
+    )
 
-# Axis labels
-plt.xlabel('Response Channel Index')
-plt.ylabel('Trigger Channel Index')
-plt.title('Negative Crosstalk Matrix Heatmap')
+    cbar = plt.colorbar(im)
+    cbar.set_label(cfg["cbar_label"])
 
-# Save & display
-plt.tight_layout()
-plt.savefig(OUT_DIR / "Neg_xtk_map_fitted.png")
-
-# -----------Positive Plot----------------
-
-# Set up value range and colormap
-vmin = -0.07  # red
-vmax = 0.3   # blue
-cmap = plt.cm.jet_r  # matches your uploaded colorbar
-
-# Create the plot
-plt.figure(figsize=(8, 6))
-im = plt.imshow(pos_xtalk_matrix, origin='lower', cmap=cmap, vmin=vmin, vmax=vmax)
-
-# Colorbar
-cbar = plt.colorbar(im)
-cbar.set_label('Positive Xtalk Value (%)')
-
-# Axis labels
-plt.xlabel('Response Channel Index')
-plt.ylabel('Trigger Channel Index')
-plt.title('Positive Crosstalk Matrix Heatmap')
-plt.tight_layout()
-plt.savefig(OUT_DIR / "Pos_xtk_map_fitted.png")
+    plt.xlabel('Response Channel Index')
+    plt.ylabel('Trigger Channel Index')
+    plt.title(cfg["title"])
+    plt.tight_layout()
+    plt.savefig(OUT_DIR / cfg["filename"])
+    plt.close()
