@@ -13,11 +13,12 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = REPO_ROOT / "results"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 PARAMS_PATH = REPO_ROOT / "temp_results"/ "parameters"
-metadata_file = PARAMS_PATH /  "fit_results" / "xtalk_metadata.json"
+IN_DIR = REPO_ROOT / "temp_results"/ "fit_results"
+metadata_file = IN_DIR / "xtalk_metadata.json"
 with open(metadata_file, "r") as f:
     xtalk_metadata = json.load(f)
 parameters = xtalk_metadata["parameters"]
-number_of_detectors = xtalk_metadata["total_detectors"]
+number_of_detectors = xtalk_metadata["number_of_detectors"]
 config_path_str = parameters["config_path"]
 config_name = parameters["config_name"]
 data_filter = parameters["data_filter"]
@@ -41,7 +42,7 @@ for j1 in range(number_of_detectors):
     for j2 in range(number_of_detectors):
         raw_id_2 = chn_id[j2]
         for label in ["neg", "pos", "neg_restrained", "pos_restrained"]:
-            npz_path = PARAMS_PATH / "fit_results" / f"fit_{label}_{j1}_{j2}.npz"
+            npz_path = IN_DIR / f"fit_{label}_{j1}_{j2}.npz"
             try:
                 with np.load(npz_path) as data:
                     success = data["success"]
