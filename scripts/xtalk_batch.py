@@ -11,7 +11,7 @@ from pathlib import Path
 
 # ---------- Setup ----------
 REPO_ROOT = Path(__file__).resolve().parents[1]
-OUTDIR = REPO_ROOT / "temp_results" / "histograms"
+OUTDIR = REPO_ROOT / "temp_results" / "histograms" / "histograms_not_fitted"
 OUTDIR.mkdir(parents=True, exist_ok=True)
 PARAMS_PATH = REPO_ROOT / "temp_results"/ "parameters"
 baseline_metadata_file = PARAMS_PATH / "baseline_metadata.json"
@@ -63,7 +63,12 @@ if raw_id_1 in skipped_channels:
             neg_bins=np.array([]),
             pos_counts=np.array([], dtype=int),
             pos_bins=np.array([]),
+            neg_counts_restrained=np.array([], dtype=int),
+            neg_bins_restrained=np.array([]),
+            pos_counts_restrained=np.array([], dtype=int),
+            pos_bins_restrained=np.array([]),
             neg_vals=np.array([]),
+            pos_vals=np.array([]),
         )
     sys.exit(0)
     

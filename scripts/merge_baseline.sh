@@ -1,5 +1,7 @@
 #!/bin/bash
 
+cd ~/xtc_talk_analysis
+
 uv run scripts/merge_baseline.py
 timestring=$(date +"%Y%m%d_%H%M%S")
 cd temp_results/parameters

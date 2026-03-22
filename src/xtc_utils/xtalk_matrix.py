@@ -16,8 +16,8 @@ class XTCMatrix:
         self.scenarios = kwargs.get("scenarios", set())
 
         # I/O Related
-        self.load_path = Path(kwargs.get("load_path")) if kwargs.get("load_path") else None
-        self.save_path = Path(kwargs.get("save_path")) if kwargs.get("save_path") else None
+        self.load_path = Path(kwargs.get("load_path")) if kwargs.get("load_path", None) else None
+        self.save_path = Path(kwargs.get("save_path")) if kwargs.get("save_path", None) else None
         self.imagename = kwargs.get("filename", f"{label}_xtalk_matrix.png")
         self.csvname = kwargs.get("csvname", f"{label}_xtalk_matrix.csv")
 
@@ -61,7 +61,7 @@ class XTCMatrix:
                 if reason not in self.scenarios:
                     self.scenarios.add(reason)
                 self.matrix[j1,j2] = mu
-                if reason == reason_dict:
+                if reason in reason_dict:
                     abb_reason = reason_dict[reason]
                     if not is_skipped_1 and not is_skipped_2 and raw_id_1 != raw_id_2:
                         self.fail_dict[abb_reason].append(f"({j1},{j2})")
@@ -69,7 +69,7 @@ class XTCMatrix:
     def plot(self, path=None, cmap=plt.cm.jet_r):
         self.save_path = Path(path) if path is not None else self.save_path
         plt.figure(figsize=(8, 6))
-        im = plt.imshow(self.matrix, vmin=self.vmin, vmax=self.vmax, cmap=cmap)
+        im = plt.imshow(self.matrix, origin="lower", vmin=self.vmin, vmax=self.vmax, cmap=cmap)
         plt.colorbar(im, label=self.cbar_label)
 
         plt.xlabel('Response Channel Index')

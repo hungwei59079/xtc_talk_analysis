@@ -1,5 +1,6 @@
 import os
 import json
+import argparse
 import matplotlib.pyplot as plt
 import numpy as np
 import sys
@@ -7,10 +8,23 @@ from scipy.optimize import curve_fit
 from scipy.ndimage import uniform_filter1d
 from pathlib import Path
 
-j1 = int(sys.argv[1])
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "channel_number",
+    type=str,
+    help="channel to fit"
+)
+parser.add_argument(
+    "--histo_dir",
+    type=str,
+    help="directory storing histograms",
+)
+args = parser.parse_args()
+
+j1 = int(args.channel_number)
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-IN_DIR = REPO_ROOT / "temp_results" / "histograms"
+IN_DIR = Path(args.histo_dir)
 OUT_DIR = REPO_ROOT / "temp_results" / "fit_results"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 

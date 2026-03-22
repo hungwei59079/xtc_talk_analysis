@@ -99,11 +99,6 @@ if __name__ == "__main__":
         help="Directory to write merged results. "
              "Default: temp_results/parameters",
     )
-    parser.add_argument(
-    "--data_dict_path",
-    type=str,
-    default=None,
-    )
 
     args = parser.parse_args()
     

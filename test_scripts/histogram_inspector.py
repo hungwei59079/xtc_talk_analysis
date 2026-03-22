@@ -17,7 +17,7 @@ parser.add_argument(
 parser.add_argument(
     "--label",
     default="neg",
-    help="neg or pos",
+    help="neg, pos, neg_restrained, or pos_restrained"
 )
 parser.add_argument(
     "--min",
@@ -26,6 +26,14 @@ parser.add_argument(
 parser.add_argument(
     "--max",
     help="max for visualized histogram"
+)
+parser.add_argument(
+    "--fit_dir",
+    help="directory storing fit parameters",
+)
+parser.add_argument(
+    "--histo_dir",
+    help="directory storing histograms"
 )
 args = parser.parse_args()
 
@@ -39,8 +47,8 @@ def gaussian(x, A, mu, sigma):
     return A * np.exp(-(x - mu)**2 / (2 * sigma**2))
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
-FIT_DIR = REPO_ROOT / "temp_results" / "fit_results"
-HISTO_DIR = REPO_ROOT / "temp_results" / "histograms"
+FIT_DIR = Path(args.fit_dir)
+HISTO_DIR = Path(args.histo_dir)
 fit_npz_path = FIT_DIR / f"fit_{label}_{j1}_{j2}.npz"
 histo_npz_path = HISTO_DIR / f"xtalk_{j1}_{j2}.npz"
 OUT_DIR = REPO_ROOT / "results" / "Inspected_histograms"
@@ -51,6 +59,10 @@ with np.load(histo_npz_path) as data:
     neg_bins = data["neg_bins"]
     pos_counts = data["pos_counts"]
     pos_bins = data["pos_bins"]
+    neg_counts_restrained = data["neg_counts_restrained"]
+    neg_bins_restrained = data["neg_bins_restrained"]
+    pos_counts_restrained = data["pos_counts_restrained"]
+    pos_bins_restrained = data["pos_bins_restrained"]
 
 with np.load(fit_npz_path) as data:
     success = bool(data["success"])
@@ -69,14 +81,20 @@ elif label == "pos":
     x = 0.5 * (pos_bins[1:] + pos_bins[:-1])
     y = pos_counts
     bins = pos_bins
+elif label == "neg_restrained":
+    x = 0.5 * (neg_bins_restrained[1:] + neg_bins_restrained[:-1])
+    y = neg_counts_restrained
+    bins = neg_bins_restrained
+elif label == "pos":
+    x = 0.5 * (pos_bins_restrained[1:] + pos_bins_restrained[:-1])
+    y = pos_counts_restrained
+    bins = pos_bins_restrained
 else:
     raise ValueError("Incorrect label")
 
 if not success:
     print(f"No plot due to {reason}")
     plt.figure()
-    print(x)
-    print(y)
     plt.bar(x, y, width=np.diff(bins), alpha=0.5, label=f"data (N={total_events})")
     plt.title(f"{label} histogram j1={j1}, j2={j2}")
     plt.legend()
@@ -104,8 +122,6 @@ mask = y > 0.05 * np.max(y)
 x_fit = x[mask]
 
 plt.figure()
-print(x)
-print(y)
 plt.bar(x, y, width=np.diff(bins), alpha=0.5, label=f"data (N={total_events})")
 x_dense = np.linspace(min(x_fit), max(x_fit), 300)
 plt.plot(
