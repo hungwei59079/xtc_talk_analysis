@@ -3,6 +3,7 @@
 cd ~/xtc_talk_analysis
 histogram_directory="histograms_not_fitted"
 metadata_file_target=temp_results/fit_results/
+mkdir -p $metadata_file_target
 cp temp_results/histograms/$histogram_directory/xtalk_metadata.json $metadata_file_target
 
 for i in {0..100}; do
