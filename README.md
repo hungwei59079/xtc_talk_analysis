@@ -7,6 +7,7 @@ Run the followings:
 ```
 git clone https://github.com/hungwei59079/xtc_talk_analysis.git
 cd xtc_talk_analysis
+git checkout v1.0.0
 uv sync
 ```
 To pull the repository and download the necessary packages.
