@@ -33,7 +33,7 @@ with open(xtalk_metadata_file, "r") as f:
     xtalk_metadata = json.load(f)
     number_of_detectors = xtalk_metadata["number_of_detectors"]
     parameters = xtalk_metadata["parameters"]
-    CONFIG_PATH = Path(xtalk_metadata["config_path"])
+    CONFIG_PATH = Path(parameters["config_path"])
 
 with open(CONFIG_PATH, "r") as f:
     full_cfg = json.load(f)
