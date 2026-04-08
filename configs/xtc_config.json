@@ -32,5 +32,16 @@
         "p16": ["r008", "r009", "r010", "r011", "r012", "r013", "r014", "r015", "r016", "r017", "r018"]
       }
     }
+  },
+  "fit_parameters": {
+    "histogram": {
+      "nbins": 700,
+      "range_multiplier": 3
+    },
+    "gaussian_fit": {
+      "low_stats_threshold": 100,
+      "y_mask_multiplier": 0.05,
+      "sharp_fit_min_points": 5
+    }
   }
 }

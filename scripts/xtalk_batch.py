@@ -26,6 +26,12 @@ data_filter = parameters["data_filter"]
 CONFIG_PATH = Path(config_path_str)
 config = XTCConfig(CONFIG_PATH, config_name)
 
+with open(CONFIG_PATH, "r") as f:
+    full_cfg = json.load(f)
+    fit_params = full_cfg.get("fit_parameters", {})
+    nbins = fit_params.get("histogram", {}).get("nbins", 700)
+    range_mult = fit_params.get("histogram", {}).get("range_multiplier", 3)
+
 new_hit_list, new_dsp_list, chn_id = files_and_chnid(config, data_dict=data_filter)
 j1 = int(sys.argv[1])
 raw_id_1 = chn_id[j1]
@@ -89,7 +95,19 @@ except Exception as e:
     print(f"Exception occurred at trigger channel {j1} extraction: {e}")
     trig_extract_complete = False
 
-NBINS = 700
+
+def build_hist(vals, mean, stdev, name):
+    if vals.size and not np.isnan(stdev) and stdev > 0:
+        counts, bins = np.histogram(vals, bins=nbins)
+        counts_restr, bins_restr = np.histogram(
+            vals,
+            bins=nbins,
+            range=(mean - range_mult*stdev, mean + range_mult*stdev)
+            )
+        return counts, bins, counts_restr, bins_restr
+    else:
+        print(f"warning: {name}_histogram empty or invalid")
+        return np.array([], dtype=int), np.array([]), np.array([], dtype=int), np.array([])
 
 for j2 in range(n_detectors):
     raw_id_2 = chn_id[j2]
@@ -122,28 +140,15 @@ for j2 in range(n_detectors):
         neg_vals = np.asarray(xtalk_element(trapTmax_1, trapTmin_2, negative_baseline[j2]))
         pos_vals = np.asarray(xtalk_element(trapTmax_1, trapTmax_2, positive_baseline[j2]))
 
-    # Build histograms (counts + bin edges). For empty arrays save empty arrays.
-    if neg_vals.size:
-        neg_counts_restrained, neg_bins_restrained = np.histogram(neg_vals, bins=NBINS, range=(max(min(neg_vals), -5),0.5))
-        neg_counts, neg_bins = np.histogram(neg_vals, bins=NBINS)
-    else:
-        print("warning: neg_histogram empty")
-        neg_counts = np.array([], dtype=int)
-        neg_counts_restrained = np.array([], dtype=int)
-        neg_bins = np.array([])
-        neg_bins_restrained = np.array([])
+        neg_mean = np.mean(neg_vals) if neg_vals.size else float('nan')
+        pos_mean = np.mean(pos_vals) if pos_vals.size else float('nan')
+        neg_stdev = np.std(neg_vals) if neg_vals.size else float('nan')
+        pos_stdev = np.std(pos_vals) if pos_vals.size else float('nan')
 
-    if pos_vals.size:
-        pos_counts_restrained, pos_bins_restrained = np.histogram(pos_vals, bins=NBINS, range=(-0.5,min(max(pos_vals), 5)))
-        pos_counts, pos_bins = np.histogram(pos_vals, bins=NBINS)
-    else:
-        print("warning: pos_histogram empty")
-        pos_counts = np.array([], dtype=int)
-        pos_counts_restrained = np.array([], dtype=int)
-        pos_bins = np.array([])
-        pos_bins_restrained = np.array([])
+    neg_counts, neg_bins, neg_counts_restrained, neg_bins_restrained = build_hist(neg_vals, neg_mean, neg_stdev, "neg")
+    pos_counts, pos_bins, pos_counts_restrained, pos_bins_restrained = build_hist(pos_vals, pos_mean, pos_stdev, "pos")
 
-    # Save histogram numeric data to compressed .npz
+# Save histogram numeric data to compressed .npz
     out_path = OUTDIR / f"xtalk_{j1}_{j2}.npz"
     np.savez_compressed(
         out_path,
