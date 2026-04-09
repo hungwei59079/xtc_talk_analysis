@@ -113,6 +113,10 @@ for j2 in range(n_detectors):
     raw_id_2 = chn_id[j2]
     neg_vals = np.array([])
     pos_vals = np.array([])
+    neg_mean = float('nan')
+    pos_mean = float('nan')
+    neg_stdev = float('nan')
+    pos_stdev = float('nan')
     
 # Skip if self-interaction or either channel is missing
     if raw_id_1 == raw_id_2:
