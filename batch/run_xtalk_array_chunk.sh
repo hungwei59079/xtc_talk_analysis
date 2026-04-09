@@ -31,7 +31,8 @@ echo "Running xtalk_batch.py on task ${SLURM_ARRAY_TASK_ID}"
 # Run inside container
 # -----------------------------
 
-python scripts/xtalk_batch.py "${SLURM_ARRAY_TASK_ID}"
+# Change temp_result_dir to wherever the temp_results are stored on the cluster. 
+python scripts/xtalk_batch.py "${SLURM_ARRAY_TASK_ID} --temp_result_dir $SCRATCH/temp_results"
 
 echo "Done."
 date

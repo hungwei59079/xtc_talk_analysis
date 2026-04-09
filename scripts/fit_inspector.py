@@ -3,12 +3,22 @@ import matplotlib.pyplot as plt
 import json
 from pathlib import Path
 from xtc_utils import files_and_chnid, XTCConfig, XTCMatrix
+import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--temp_result_dir",
+    type=str,
+    default=None,
+)
+args = parser.parse_args()
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = REPO_ROOT / "results"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
-PARAMS_PATH = REPO_ROOT / "temp_results"/ "parameters"
-IN_DIR = REPO_ROOT / "temp_results"/ "fit_results"
+PARAMS_PATH = Path(args.temp_result_dir) / "parameters"
+IN_DIR = Path(args.temp_result_dir) / "fit_results"
 metadata_file = IN_DIR / "xtalk_metadata.json"
 with open(metadata_file, "r") as f:
     xtalk_metadata = json.load(f)

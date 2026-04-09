@@ -31,11 +31,18 @@ parser.add_argument(
     type=int,
     help="Index of the detector to process (0-based index into the channel list)."
 )
+parser.add_argument(
+    "--temp_result_dir",
+    type=str,
+    default=None,
+    help="Path to the temp_results directory where outputs will be saved. "
+         "If not provided, defaults to <repo_root>/temp_results.",
+)
 args = parser.parse_args()
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 CONFIG_PATH = Path(args.config_path)
-OUTDIR = REPO_ROOT / "temp_results" / "parameters" / "baseline_individuals"
+OUTDIR = Path(args.temp_result_dir) / "parameters" / "baseline_individuals"
 JSONDIR = OUTDIR / "json"
 TRAPTMIN_DIR = OUTDIR / "trapTmin"
 TRAPTMAX_DIR = OUTDIR / "trapTmax"

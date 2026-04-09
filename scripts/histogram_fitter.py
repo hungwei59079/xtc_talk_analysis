@@ -19,13 +19,18 @@ parser.add_argument(
     type=str,
     help="directory storing histograms",
 )
+parser.add_argument(
+    --"temp_result_dir",
+    type=str,
+    help="Path to the temp_results directory where outputs will be saved."
+)
 args = parser.parse_args()
 
 j1 = int(args.channel_number)
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 IN_DIR = Path(args.histo_dir)
-OUT_DIR = REPO_ROOT / "temp_results" / "fit_results"
+OUT_DIR = Path(args.temp_result_dir) / "fit_results"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 xtalk_metadata_file = IN_DIR / "xtalk_metadata.json"

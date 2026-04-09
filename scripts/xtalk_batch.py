@@ -1,6 +1,7 @@
 # xtalk_batch.py
 
 import sys
+import argparse
 import os
 import json
 import numpy as np
@@ -10,10 +11,18 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 
 # ---------- Setup ----------
+parser = argparse.ArgumentParser()
+parser.add_argument("--temp_result_dir", 
+                    help="Path to the temp_results directory containing parameters and metadata.",
+                    default=Path(__file__).resolve().parents[1] / "temp_results"
+                    )
+parser.add_argument("j1", type=int, help="Index of the trigger channel (0-based).")
+args = parser.parse_args()
+
 REPO_ROOT = Path(__file__).resolve().parents[1]
-OUTDIR = REPO_ROOT / "temp_results" / "histograms" / "histograms_not_fitted"
+OUTDIR = Path(args.temp_result_dir) / "histograms" / "histograms_not_fitted"
 OUTDIR.mkdir(parents=True, exist_ok=True)
-PARAMS_PATH = REPO_ROOT / "temp_results"/ "parameters"
+PARAMS_PATH = args.temp_result_dir / "parameters"
 baseline_metadata_file = PARAMS_PATH / "baseline_metadata.json"
 with open(baseline_metadata_file, "r") as f:
     baseline_metadata = json.load(f)
