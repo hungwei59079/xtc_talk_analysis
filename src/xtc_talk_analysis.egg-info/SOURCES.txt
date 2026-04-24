@@ -6,4 +6,7 @@ src/xtc_talk_analysis.egg-info/dependency_links.txt
 src/xtc_talk_analysis.egg-info/requires.txt
 src/xtc_talk_analysis.egg-info/top_level.txt
 src/xtc_utils/__init__.py
+src/xtc_utils/config.py
+src/xtc_utils/event_selector.py
 src/xtc_utils/self_defined_functions.py
+src/xtc_utils/xtalk_matrix.py

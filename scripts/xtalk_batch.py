@@ -22,7 +22,7 @@ args = parser.parse_args()
 REPO_ROOT = Path(__file__).resolve().parents[1]
 OUTDIR = Path(args.temp_result_dir) / "histograms" / "histograms_not_fitted"
 OUTDIR.mkdir(parents=True, exist_ok=True)
-PARAMS_PATH = args.temp_result_dir / "parameters"
+PARAMS_PATH = Path(args.temp_result_dir) / "parameters"
 baseline_metadata_file = PARAMS_PATH / "baseline_metadata.json"
 with open(baseline_metadata_file, "r") as f:
     baseline_metadata = json.load(f)

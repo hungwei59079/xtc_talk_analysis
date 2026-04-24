@@ -16,7 +16,7 @@
 # -----------------------------
 # Modify these variables as needed
 CONFIG_PATH="configs/xtc_config.json"
-CONFIG_NAME="xtc_old"
+CONFIG_NAME="xtc_p16"
 # Optional: path to data filter JSON file (comment out if not needed)
 # DATA_DICT_PATH="configs/data_filter_example.json"
 
@@ -41,7 +41,7 @@ echo "Running prepare_baseline.py on task ${SLURM_ARRAY_TASK_ID}"
 # -----------------------------
 
 # Build the command with optional data_dict_path
-CMD="python scripts/prepare_baseline.py --config_path ${CONFIG_PATH} --config_name ${CONFIG_NAME}"
+CMD="python scripts/prepare_baseline.py --config_path ${CONFIG_PATH} --config_name ${CONFIG_NAME} --temp_result_target ${SCRATCH}"
 
 # Uncomment the following line if using a data filter
 # CMD="${CMD} --data_dict_path ${DATA_DICT_PATH}"

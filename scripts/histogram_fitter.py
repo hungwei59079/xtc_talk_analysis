@@ -20,7 +20,7 @@ parser.add_argument(
     help="directory storing histograms",
 )
 parser.add_argument(
-    --"temp_result_dir",
+    "--temp_result_dir",
     type=str,
     help="Path to the temp_results directory where outputs will be saved."
 )
