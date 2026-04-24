@@ -17,6 +17,7 @@ Go to `batch/prepare_baseline_batch.sh` and edit the following lines:
 ```
 CONFIG_PATH="configs/xtc_config.json"
 CONFIG_NAME="xtc_old"
+TEMP_RESULT_LOC="${SCRATCH}"
 ```
 to whatever you would like to use. 
 Currently two configuration `xtc_old` and `xtc_p16` are provided in `xtc_config.json`. 
