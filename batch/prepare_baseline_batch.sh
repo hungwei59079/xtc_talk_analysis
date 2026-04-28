@@ -46,7 +46,7 @@ mkdir -p logs
 
 date
 hostname
-echo "Running prepare_baseline.py on task ${SLURM_ARRAY_TASK_ID}"
+echo "Running prepare_baseline.py on task ${SLURM_ARRAY_TASK_ID}, using config ${CONFIG_NAME} at ${CONFIG_PATH}, storing results in ${TEMP_RESULT_LOC}"
 
 # -----------------------------
 # Run the baseline computation

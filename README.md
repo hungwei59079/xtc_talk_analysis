@@ -13,45 +13,36 @@ uv sync
 To pull the repository and download the necessary packages.
 
 #### Step 1 - Prepare baseline in batch:
-Go to `batch/prepare_baseline_batch.sh` and edit the following lines:
-```
-CONFIG_PATH="configs/xtc_config.json"
-CONFIG_NAME="xtc_old"
-TEMP_RESULT_LOC="${SCRATCH}"
-```
-to whatever you would like to use. 
-Currently two configuration `xtc_old` and `xtc_p16` are provided in `xtc_config.json`. 
+Review `configs/jobs_list.json` and ensure jobs and configurations are set to whatever you would like to use. 
+Currently configurations like `xtc_old` and `xtc_p16` are provided in `xtc_config.json`. 
 One could add new configurations by oneself as long as the keys are the same. 
 
 After modifying the parameters, one could run
 ```
-sbatch batch/prepare_baseline_batch.sh
+uv run scripts/submit_jobs.py --step 1
 ```
 to submit the baseline computation jobs to SLURM. 
-Note that by default, the temporary results are generated in `${SCRATCH}/temp_results` as configured by the `--temp_result_target` flag in the script.
+The temporary results are generated in the `temp_result_loc` mapped out in the job list JSON.
 
 #### Step 2 - Merge Baseline:
 Run:
 ```
-./scripts/merge_baseline.sh $SCRATCH/temp_results
+uv run scripts/submit_jobs.py --step 2
 ```
-to merge independent baseline results into one single set of `.npy` files. 
-You need to specify the path to your `temp_results` directory as an argument.
+to merge independent baseline results into one single set of `.npy` files across all target tasks. 
 The directory storing the individual results will not be removed but instead be renamed with a time string appended to it for reusability.
 
 #### Step 3 - Xtalk Element Computation and Binning:
-Before running, be sure to open `batch/run_xtalk_array_chunk.sh` and ensure the `--temp_result_dir` argument passed to `xtalk_batch.py` points to your `temp_results` directory (by default `"$SCRATCH/temp_results"`).
-Then, run:
+Run:
 ```
-sbatch batch/run_xtalk_array_chunk.sh
+uv run scripts/submit_jobs.py --step 3
 ```
-to compute the xtalk elements. They will be filled into the histograms. Note that in order to remove extreme values, only the data within 3 standard deviation will be filled in.
+to submit batch calculations for the xtalk elements. They will be filled into the histograms. Note that in order to remove extreme values, only the data within 3 standard deviation will be filled in.
 
 #### Step 4 - Fitting and Plotting the Xtalk Matrices:
 Run:
 ```
-./scripts/histogram_fitter.sh $SCRATCH/temp_results
+uv run scripts/submit_jobs.py --step 4
 ```
-You need to specify the path to your `temp_results` directory as an argument.
 Gaussian fit will be done on previous histograms and xtalk matrices will be produced after the fitting is complete.
 The results will be stored in `results/`.

@@ -14,6 +14,10 @@
 # -----------------------------
 # Setup
 # -----------------------------
+if [ -z "$TEMP_RESULT_LOC" ]; then
+    echo "WARNING: TEMP_RESULT_LOC not set by environment. Falling back to default." >&2
+    TEMP_RESULT_LOC="$SCRATCH/temp_results"
+fi
 
 # Always work from the repository root
 REPO_ROOT=$SLURM_SUBMIT_DIR
@@ -25,14 +29,14 @@ mkdir -p logs
 
 date
 hostname
-echo "Running xtalk_batch.py on task ${SLURM_ARRAY_TASK_ID}"
+echo "Running xtalk_batch.py on task ${SLURM_ARRAY_TASK_ID}, storing results in ${TEMP_RESULT_LOC}"
 
 # -----------------------------
 # Run inside container
 # -----------------------------
 
 # Change temp_result_dir to wherever the temp_results are stored on the cluster. 
-python scripts/xtalk_batch.py "${SLURM_ARRAY_TASK_ID}" --temp_result_dir "$SCRATCH/temp_results"
+python scripts/xtalk_batch.py "${SLURM_ARRAY_TASK_ID}" --temp_result_dir "${TEMP_RESULT_LOC}"
 
 echo "Done."
 date
