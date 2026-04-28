@@ -16,7 +16,7 @@
         "p08": ["r015"]
       }
     },
-    "xtc_p16": {
+    "xtc_p16_ssc": {
       "xtc_dir": "/global/cfs/projectdirs/m2676/data/lngs/l200/public/prodenv/prod-blind/auto/v2.0.0",
       "path_templates": {
         "hit_dir": "{xtc_dir}/generated/tier/hit/ssc/{period}/{run}",
@@ -46,6 +46,22 @@
       },
       "available_periods": {
         "p16": ["r000", "r001", "r002", "r003", "r004", "r005", "r006"]
+      }
+    },
+    "xtc_p16_rdc": {
+      "xtc_dir": "/global/cfs/projectdirs/m2676/data/lngs/l200/public/prodenv/prod-blind/auto/v2.0.0",
+      "path_templates": {
+        "hit_dir": "{xtc_dir}/generated/tier/hit/rdc/{period}/{run}",
+        "dsp_dir": "{xtc_dir}/generated/tier/dsp/rdc/{period}/{run}"
+      },
+      "number_of_detectors": 60,
+      "baseline_conditions": {"is_empty_candidate": 63},
+      "xtalk_flags": {
+        "trigger_conditions": {"is_highly_positive_polarity_candidate": 511},
+        "response_conditions": {}
+      },
+      "available_periods": {
+        "p16": ["r019", "r020", "r021"]
       }
     }
   },
