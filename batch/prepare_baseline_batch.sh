@@ -12,14 +12,25 @@
 #SBATCH -A m2676
 
 # -----------------------------
-# Configuration
+# Configuration (now primarily using Environment Variables from orchestrator)
 # -----------------------------
-# Modify these variables as needed
-CONFIG_PATH="configs/xtc_config.json"
-CONFIG_NAME="xtc_p16"
-TEMP_RESULT_LOC="${SCRATCH}"
-# Optional: path to data filter JSON file (comment out if not needed)
-# DATA_DICT_PATH="configs/data_filter_example.json"
+if [ -z "$CONFIG_PATH" ]; then
+    echo "WARNING: CONFIG_PATH not set by environment. Falling back to default." >&2
+    CONFIG_PATH="configs/xtc_config.json"
+fi
+
+if [ -z "$CONFIG_NAME" ]; then
+    echo "WARNING: CONFIG_NAME not set by environment. Falling back to default." >&2
+    CONFIG_NAME="xtc_p16"
+fi
+
+if [ -z "$TEMP_RESULT_LOC" ]; then
+    echo "WARNING: TEMP_RESULT_LOC not set by environment. Falling back to default." >&2
+    TEMP_RESULT_LOC="${SCRATCH}"
+fi
+
+# Optional: path to data filter JSON file
+# DATA_DICT_PATH=${DATA_DICT_PATH:-"configs/data_filter_example.json"}
 
 # -----------------------------
 # Setup
@@ -35,7 +46,7 @@ mkdir -p logs
 
 date
 hostname
-echo "Running prepare_baseline.py on task ${SLURM_ARRAY_TASK_ID}"
+echo "Running prepare_baseline.py on task ${SLURM_ARRAY_TASK_ID}, using config ${CONFIG_NAME} at ${CONFIG_PATH}, storing results in ${TEMP_RESULT_LOC}"
 
 # -----------------------------
 # Run the baseline computation
@@ -44,8 +55,9 @@ echo "Running prepare_baseline.py on task ${SLURM_ARRAY_TASK_ID}"
 # Build the command with optional data_dict_path
 CMD="python scripts/prepare_baseline.py --config_path ${CONFIG_PATH} --config_name ${CONFIG_NAME} --temp_result_target ${TEMP_RESULT_LOC}"
 
-# Uncomment the following line if using a data filter
-# CMD="${CMD} --data_dict_path ${DATA_DICT_PATH}"
+if [ -n "$DATA_DICT_PATH" ]; then
+    CMD="${CMD} --data_dict_path ${DATA_DICT_PATH}"
+fi
 
 CMD="${CMD} ${SLURM_ARRAY_TASK_ID}"
 

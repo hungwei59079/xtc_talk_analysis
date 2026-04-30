@@ -1,0 +1,128 @@
+{
+    "job_phy_r000": {
+      "config_path": "configs/xtc_config.json",
+      "config_name": "xtc_p16_phy",
+      "temp_result_loc": "/pscratch/sd/h/hungwei/temp_results_phy_r000",
+      "data_dict": {"p16": ["r000"]}
+    },
+    "job_phy_r001": {
+      "config_path": "configs/xtc_config.json",
+      "config_name": "xtc_p16_phy",
+      "temp_result_loc": "/pscratch/sd/h/hungwei/temp_results_phy_r001",
+      "data_dict": {"p16": ["r001"]}
+    },
+    "job_phy_r002": {
+      "config_path": "configs/xtc_config.json",
+      "config_name": "xtc_p16_phy",
+      "temp_result_loc": "/pscratch/sd/h/hungwei/temp_results_phy_r002",
+      "data_dict": {"p16": ["r002"]}
+    },
+    "job_phy_r003": {
+      "config_path": "configs/xtc_config.json",
+      "config_name": "xtc_p16_phy",
+      "temp_result_loc": "/pscratch/sd/h/hungwei/temp_results_phy_r003",
+      "data_dict": {"p16": ["r003"]}
+    },
+    "job_phy_r004": {
+      "config_path": "configs/xtc_config.json",
+      "config_name": "xtc_p16_phy",
+      "temp_result_loc": "/pscratch/sd/h/hungwei/temp_results_phy_r004",
+      "data_dict": {"p16": ["r004"]}
+    },
+    "job_phy_r005": {
+      "config_path": "configs/xtc_config.json",
+      "config_name": "xtc_p16_phy",
+      "temp_result_loc": "/pscratch/sd/h/hungwei/temp_results_phy_r005",
+      "data_dict": {"p16": ["r005"]}
+    },
+    "job_phy_r006": {
+      "config_path": "configs/xtc_config.json",
+      "config_name": "xtc_p16_phy",
+      "temp_result_loc": "/pscratch/sd/h/hungwei/temp_results_phy_r006",
+      "data_dict": {"p16": ["r006"]}
+    },
+    "job_ssc_r008": {
+      "config_path": "configs/xtc_config.json",
+      "config_name": "xtc_p16_ssc",
+      "temp_result_loc": "/pscratch/sd/h/hungwei/temp_results_ssc_r008",
+      "data_dict": {"p16": ["r008"]}
+    },
+    "job_ssc_r009": {
+      "config_path": "configs/xtc_config.json",
+      "config_name": "xtc_p16_ssc",
+      "temp_result_loc": "/pscratch/sd/h/hungwei/temp_results_ssc_r009",
+      "data_dict": {"p16": ["r009"]}
+    },
+    "job_ssc_r010": {
+      "config_path": "configs/xtc_config.json",
+      "config_name": "xtc_p16_ssc",
+      "temp_result_loc": "/pscratch/sd/h/hungwei/temp_results_ssc_r010",
+      "data_dict": {"p16": ["r010"]}
+    },
+    "job_ssc_r011": {
+      "config_path": "configs/xtc_config.json",
+      "config_name": "xtc_p16_ssc",
+      "temp_result_loc": "/pscratch/sd/h/hungwei/temp_results_ssc_r011",
+      "data_dict": {"p16": ["r011"]}
+    },
+    "job_ssc_r012": {
+      "config_path": "configs/xtc_config.json",
+      "config_name": "xtc_p16_ssc",
+      "temp_result_loc": "/pscratch/sd/h/hungwei/temp_results_ssc_r012",
+      "data_dict": {"p16": ["r012"]}
+    },
+    "job_ssc_r013": {
+      "config_path": "configs/xtc_config.json",
+      "config_name": "xtc_p16_ssc",
+      "temp_result_loc": "/pscratch/sd/h/hungwei/temp_results_ssc_r013",
+      "data_dict": {"p16": ["r013"]}
+    },
+    "job_ssc_r014": {
+      "config_path": "configs/xtc_config.json",
+      "config_name": "xtc_p16_ssc",
+      "temp_result_loc": "/pscratch/sd/h/hungwei/temp_results_ssc_r014",
+      "data_dict": {"p16": ["r014"]}
+    },
+    "job_ssc_r015": {
+      "config_path": "configs/xtc_config.json",
+      "config_name": "xtc_p16_ssc",
+      "temp_result_loc": "/pscratch/sd/h/hungwei/temp_results_ssc_r015",
+      "data_dict": {"p16": ["r015"]}
+    },
+    "job_ssc_r016": {
+      "config_path": "configs/xtc_config.json",
+      "config_name": "xtc_p16_ssc",
+      "temp_result_loc": "/pscratch/sd/h/hungwei/temp_results_ssc_r016",
+      "data_dict": {"p16": ["r016"]}
+    },
+    "job_ssc_r017": {
+      "config_path": "configs/xtc_config.json",
+      "config_name": "xtc_p16_ssc",
+      "temp_result_loc": "/pscratch/sd/h/hungwei/temp_results_ssc_r017",
+      "data_dict": {"p16": ["r017"]}
+    },
+    "job_ssc_r018": {
+      "config_path": "configs/xtc_config.json",
+      "config_name": "xtc_p16_ssc",
+      "temp_result_loc": "/pscratch/sd/h/hungwei/temp_results_ssc_r018",
+      "data_dict": {"p16": ["r018"]}
+    },
+    "job_rdc_r019": {
+      "config_path": "configs/xtc_config.json",
+      "config_name": "xtc_p16_rdc",
+      "temp_result_loc": "/pscratch/sd/h/hungwei/temp_results_rdc_r019",
+      "data_dict": {"p16": ["r019"]}
+    },
+    "job_rdc_r020": {
+      "config_path": "configs/xtc_config.json",
+      "config_name": "xtc_p16_rdc",
+      "temp_result_loc": "/pscratch/sd/h/hungwei/temp_results_rdc_r020",
+      "data_dict": {"p16": ["r020"]}
+    },
+    "job_rdc_r021": {
+      "config_path": "configs/xtc_config.json",
+      "config_name": "xtc_p16_rdc",
+      "temp_result_loc": "/pscratch/sd/h/hungwei/temp_results_rdc_r021",
+      "data_dict": {"p16": ["r021"]}
+    }
+}
