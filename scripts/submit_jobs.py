@@ -42,10 +42,10 @@ for job_id, params in jobs.items():
         ])
     
     elif args.step == 2:
-        subprocess.run(["./scripts/merge_baseline.sh", temp_dir])
+        subprocess.run(["./scripts/merge_baseline.sh", f"{temp_dir}/temp_results"])
         
     elif args.step == 3:
-        export_vars = f"TEMP_RESULT_LOC={temp_dir}"
+        export_vars = f"TEMP_RESULT_LOC={temp_dir}/temp_results"
         subprocess.run([
             "sbatch",
             f"--export=ALL,{export_vars}",
@@ -53,4 +53,4 @@ for job_id, params in jobs.items():
         ])
         
     elif args.step == 4:
-        subprocess.run(["./scripts/histogram_fitter.sh", temp_dir])
+        subprocess.run(["./scripts/histogram_fitter.sh", f"{temp_dir}/temp_results"])
