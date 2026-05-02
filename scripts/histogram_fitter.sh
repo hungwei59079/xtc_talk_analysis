@@ -1,6 +1,7 @@
 #!/bin/bash
 
 output_root=$1
+job_id=$2
 histogram_directory="histograms_not_fitted"
 metadata_file_target="fit_results"
 mkdir -p "$output_root/$metadata_file_target"
@@ -12,7 +13,7 @@ for i in {0..100}; do
     echo "Finish fitting detector $i."
 done
 
-uv run scripts/fit_inspector.py --temp_result_dir "$output_root/"
+uv run scripts/fit_inspector.py --temp_result_dir "$output_root/" --job_id "$job_id"
 
 cd "$output_root/histograms/"
 timestring=$(date +"%Y%m%d_%H%M%S")

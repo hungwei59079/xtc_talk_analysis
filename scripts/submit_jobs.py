@@ -53,4 +53,4 @@ for job_id, params in jobs.items():
         ])
         
     elif args.step == 4:
-        subprocess.run(["./scripts/histogram_fitter.sh", f"{temp_dir}/temp_results"])
+        subprocess.run(["./scripts/histogram_fitter.sh", f"{temp_dir}/temp_results", job_id])

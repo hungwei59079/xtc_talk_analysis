@@ -11,11 +11,19 @@ parser.add_argument(
     type=str,
     default=None,
 )
+parser.add_argument(
+    "--job_id",
+    type=str,
+    default=None,
+    help="Subdirectory under results/ to save outputs into; avoids overwriting between jobs.",
+)
 args = parser.parse_args()
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 OUT_DIR = REPO_ROOT / "results"
+if args.job_id:
+    OUT_DIR = OUT_DIR / args.job_id
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 PARAMS_PATH = Path(args.temp_result_dir) / "parameters"
 IN_DIR = Path(args.temp_result_dir) / "fit_results"
