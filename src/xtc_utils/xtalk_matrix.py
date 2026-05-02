@@ -12,6 +12,7 @@ class XTCMatrix:
         # Data Related
         self.n_detectors = n_detectors
         self.matrix = kwargs.get("matrix", np.full((n_detectors, n_detectors), np.nan))
+        self.sigma_matrix = kwargs.get("sigma_matrix", np.full((n_detectors, n_detectors), np.nan))
         self.fail_dict = kwargs.get("fail_dict", {"no_stats": [], "low_stats": [], "delta": [], "sharp": []})
         self.scenarios = kwargs.get("scenarios", set())
 
@@ -20,6 +21,7 @@ class XTCMatrix:
         self.save_path = Path(kwargs.get("save_path")) if kwargs.get("save_path", None) else None
         self.imagename = kwargs.get("filename", f"{label}_xtalk_matrix.png")
         self.csvname = kwargs.get("csvname", f"{label}_xtalk_matrix.csv")
+        self.sigma_csvname = kwargs.get("sigma_csvname", f"{label}_xtalk_matrix_sigma.csv")
 
         # Plot Related
         self.label = label
@@ -55,12 +57,14 @@ class XTCMatrix:
                     with np.load(npz_path) as data:
                         reason = str(data["reason"])
                         mu = float(data["mu"])
+                        sigma = float(data["sigma"])
                 except Exception as e:
                     print(f"Exception {e} occurs. Skipping.")
                     continue
                 if reason not in self.scenarios:
                     self.scenarios.add(reason)
                 self.matrix[j1,j2] = mu
+                self.sigma_matrix[j1,j2] = sigma
                 if reason in reason_dict:
                     abb_reason = reason_dict[reason]
                     if not is_skipped_1 and not is_skipped_2 and raw_id_1 != raw_id_2:
@@ -82,6 +86,7 @@ class XTCMatrix:
     def save_csv(self, path=None):
         self.save_path = Path(path) if path is not None else self.save_path
         np.savetxt(self.save_path / self.csvname, self.matrix, delimiter=",", fmt="%.6f")
+        np.savetxt(self.save_path / self.sigma_csvname, self.sigma_matrix, delimiter=",", fmt="%.6f")
 
     def diagnose(self):
         print(f"Scenarios encountered for {self.label} matrix: {self.scenarios}")

@@ -44,6 +44,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 csv_name = f"{args.label}_xtalk_matrix.csv"
+sigma_csv_name = f"{args.label}_xtalk_matrix_sigma.csv"
 
 points = []
 for job_dir in sorted(args.results_dir.iterdir()):
@@ -59,9 +60,17 @@ for job_dir in sorted(args.results_dir.iterdir()):
     matrix = np.loadtxt(csv_path, delimiter=",")
     value = matrix[args.trigger, args.response]
 
+    sigma_path = job_dir / sigma_csv_name
+    if sigma_path.exists():
+        sigma_matrix = np.loadtxt(sigma_path, delimiter=",")
+        sigma = sigma_matrix[args.trigger, args.response]
+    else:
+        print(f"  {job_dir.name}: {sigma_csv_name} not found, plotting without error bar.")
+        sigma = np.nan
+
     run_match = RUN_RE.search(job_dir.name)
     run_label = run_match.group(0) if run_match else job_dir.name
-    points.append((run_label, job_dir.name, value))
+    points.append((run_label, job_dir.name, value, sigma))
 
 if not points:
     raise SystemExit(f"No matching results found in {args.results_dir}.")
@@ -70,9 +79,10 @@ points.sort(key=lambda p: p[0])
 run_labels = [p[0] for p in points]
 job_names = [p[1] for p in points]
 values = np.array([p[2] for p in points])
+sigmas = np.array([p[3] for p in points])
 
 fig, ax = plt.subplots(figsize=(max(6, 0.4 * len(points)), 4))
-ax.plot(range(len(points)), values, marker="o", linestyle="-")
+ax.errorbar(range(len(points)), values, yerr=sigmas, marker="o", linestyle="-", capsize=3)
 ax.set_xticks(range(len(points)))
 ax.set_xticklabels(run_labels, rotation=45, ha="right")
 ax.set_xlabel("Run")
@@ -86,5 +96,5 @@ fig.savefig(out_path)
 plt.close(fig)
 print(f"Saved plot to {out_path}")
 
-for run_label, job_name, value in zip(run_labels, job_names, values):
-    print(f"  {run_label} ({job_name}): {value:.6f}")
+for run_label, job_name, value, sigma in zip(run_labels, job_names, values, sigmas):
+    print(f"  {run_label} ({job_name}): {value:.6f} +/- {sigma:.6f}")
