@@ -66,8 +66,14 @@ OUT_DIR = Path(args.out_dir) if args.out_dir else REPO_ROOT / "results" / "zero_
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Thresholds.
-SELECTION_EMAX = 25   # keep events with detector-i energy below this
+SELECTION_EMAX = 25    # keep events with detector-i energy below this
 SIGNAL_THRESHOLD = 50  # a detector "fired" (delta_j = 1) above this energy
+# Upper bound on a usable donor energy. The crosstalk matrix was fit with
+# trigger energies in (1500, 99999) keV (scripts/xtalk_batch.py:97); the linear
+# C*A_j model does not hold above it, and saturated / mis-calibrated events
+# carry huge *finite* cuspEmax_ctc_cal values that nan_to_num does not catch.
+# Donors above this energy are treated as not firing (delta_j = 0).
+SIGNAL_MAX = 99999
 
 config = XTCConfig(CONFIG_PATH, args.config_name)
 
@@ -123,6 +129,7 @@ print(f"Selected {len(uncorrected)} events with cuspEmax_ctc_cal < {SELECTION_EM
 # --- Step 4: per-event crosstalk correction ----------------------------------
 # correction[e] = - sum_{j != i} (C[j,i]/100) * A_j[e] * delta_j[e]
 correction = np.zeros(len(selected_idxs))
+n_capped_total = 0
 for j in range(n_det):
     if j == detector_index:
         continue
@@ -145,12 +152,34 @@ for j in range(n_det):
     except Exception as e:
         print(f"  detector {j} (ch{chn_id[j]}) unreadable, skipping: {e}")
         continue
-    delta_j = (a_j > SIGNAL_THRESHOLD).astype(float)
+    fired = a_j > SIGNAL_THRESHOLD
+    over_cap = a_j > SIGNAL_MAX
+    n_over_cap = int(np.count_nonzero(over_cap))
+    if n_over_cap:
+        n_capped_total += n_over_cap
+        print(
+            f"  [cap] detector {j} (ch{chn_id[j]}): {n_over_cap} events with "
+            f"energy > {SIGNAL_MAX} (max {a_j.max():.4g}) excluded from the "
+            f"correction -- likely saturated / mis-calibrated"
+        )
+    # Only physically-modelled signals (SIGNAL_THRESHOLD < A_j <= SIGNAL_MAX)
+    # contribute; the upper cap is what stops a single garbage donor energy
+    # from producing a runaway correction.
+    delta_j = (fired & ~over_cap).astype(float)
     correction += crosstalk_col[j] * a_j * delta_j
     print(f"correction contribution from detector {j} completed")
 
 correction = -correction
 corrected = uncorrected + correction
+
+if n_capped_total:
+    print(
+        f"Total donor events excluded by the {SIGNAL_MAX} keV cap: "
+        f"{n_capped_total} -- if this is non-zero, oversized finite donor "
+        f"energies were the cause of the runaway correction."
+    )
+else:
+    print(f"No donor energies exceeded the {SIGNAL_MAX} keV cap.")
 
 
 # --- Step 6: overlay histogram -----------------------------------------------
