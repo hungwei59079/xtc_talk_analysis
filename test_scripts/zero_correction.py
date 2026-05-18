@@ -177,9 +177,9 @@ hi = max(uncorrected.max(), corrected.max())
 bins = np.linspace(lo, hi, 101)
 
 plt.figure(figsize=(10, 6))
-plt.hist(uncorrected, bins=bins, alpha=0.5,
+plt.hist(uncorrected, bins=bins, histtype="step", linewidth=1.5,
          label=f"Uncorrected (mean={np.mean(uncorrected):.3f})")
-plt.hist(corrected, bins=bins, alpha=0.5,
+plt.hist(corrected, bins=bins, histtype="step", linewidth=1.5,
          label=f"Corrected (mean={np.mean(corrected):.3f})")
 plt.xlabel("cuspEmax_ctc_cal energy")
 plt.ylabel("Counts")
