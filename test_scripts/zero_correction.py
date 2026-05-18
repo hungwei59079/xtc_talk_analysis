@@ -103,7 +103,7 @@ target_selection = EventSelector(
     table_path=f"ch{detector}/hit/",
     files=new_hit_list,
     ene_dataset="cuspEmax_ctc_cal",
-    energy_range=(-np.inf, SELECTION_EMAX),
+    energy_range=(-3 * SELECTION_EMAX, SELECTION_EMAX),
 )
 uncorrected = target_selection.selected_energies
 selected_idxs = target_selection.selected_idxs
