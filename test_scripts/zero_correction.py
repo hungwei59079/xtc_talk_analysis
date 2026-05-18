@@ -95,7 +95,9 @@ abs_pos = np.where(np.isnan(pos_matrix), -np.inf, np.abs(pos_matrix))
 abs_neg = np.where(np.isnan(neg_matrix), -np.inf, np.abs(neg_matrix))
 agg_matrix = np.where(abs_pos >= abs_neg, pos_matrix, neg_matrix)
 
-crosstalk_col = np.nan_to_num(agg_matrix[:, detector_index], nan=0.0) / 100.0
+crosstalk_col = np.nan_to_num(
+    agg_matrix[:, detector_index], nan=0.0, posinf=0.0, neginf=0.0
+) / 100.0
 
 target_selection = EventSelector(
     table_path=f"ch{detector}/hit/",
@@ -105,6 +107,17 @@ target_selection = EventSelector(
 )
 uncorrected = target_selection.selected_energies
 selected_idxs = target_selection.selected_idxs
+
+# cuspEmax_ctc_cal can hold non-finite sentinels (+/-inf). EventSelector only
+# drops NaN, so -inf events survive the < 25 cut; remove them here so they
+# cannot poison the histogram range or the corrected energies. selected_idxs
+# is filtered in lockstep to stay event-aligned with the donor reads below.
+finite_mask = np.isfinite(uncorrected)
+n_nonfinite = int(np.count_nonzero(~finite_mask))
+if n_nonfinite:
+    print(f"Dropped {n_nonfinite} selected events with non-finite energy")
+uncorrected = uncorrected[finite_mask]
+selected_idxs = selected_idxs[finite_mask]
 print(f"Selected {len(uncorrected)} events with cuspEmax_ctc_cal < {SELECTION_EMAX}")
 
 # --- Step 4: per-event crosstalk correction ----------------------------------
@@ -124,7 +137,11 @@ for j in range(n_det):
             idx=selected_idxs,
         )
         # energy_all_indexed is aligned event-by-event with selected_idxs.
-        a_j = np.nan_to_num(donor.energy_all_indexed, nan=0.0)
+        # Map NaN and +/-inf alike to 0 so a non-firing or sentinel-valued
+        # donor contributes nothing (default nan_to_num turns inf into ~1e308).
+        a_j = np.nan_to_num(
+            donor.energy_all_indexed, nan=0.0, posinf=0.0, neginf=0.0
+        )
     except Exception as e:
         print(f"  detector {j} (ch{chn_id[j]}) unreadable, skipping: {e}")
         continue
