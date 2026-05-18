@@ -90,7 +90,6 @@ for name, m in (("pos_matrix", pos_matrix), ("neg_matrix", neg_matrix)):
             f"{name} has shape {m.shape}, expected ({n_det}, {n_det}) "
             f"to match the {n_det} detectors from the config."
         )
-print(neg_matrix[:3, :4])
 
 abs_pos = np.where(np.isnan(pos_matrix), -np.inf, np.abs(pos_matrix))
 abs_neg = np.where(np.isnan(neg_matrix), -np.inf, np.abs(neg_matrix))
@@ -131,7 +130,7 @@ for j in range(n_det):
         continue
     delta_j = (a_j > SIGNAL_THRESHOLD).astype(float)
     correction += crosstalk_col[j] * a_j * delta_j
-    print("correction contribution from detector {j} completed")
+    print(f"correction contribution from detector {j} completed")
 
 correction = -correction
 corrected = uncorrected + correction
