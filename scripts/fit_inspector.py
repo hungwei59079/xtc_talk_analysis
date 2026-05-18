@@ -39,8 +39,17 @@ data_filter = parameters["data_filter"]
 CONFIG_PATH = Path(config_path_str)
 config = XTCConfig(CONFIG_PATH, config_name)
 
-new_hit_list, new_dsp_list, chn_id = files_and_chnid(config, data_dict=data_filter)
+new_hit_list, new_dsp_list, chn_id, det_names = files_and_chnid(
+    config, data_dict=data_filter, return_names=True
+)
 skipped_channels = set(np.load(PARAMS_PATH / "skipped_channels.npy"))
+
+map_path = OUT_DIR / "detector_map.csv"
+with open(map_path, "w") as f:
+    f.write("index,detector_name,channel_id\n")
+    for idx, (name, rawid) in enumerate(zip(det_names, chn_id)):
+        f.write(f"{idx},{name},{rawid}\n")
+print(f"Saved detector index mapping to {map_path}")
 
 for label in ["neg", "pos", "neg_restrained", "pos_restrained"]:
     xtalk_matrix = XTCMatrix(number_of_detectors, label)

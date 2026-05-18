@@ -8,9 +8,9 @@ import matplotlib.pyplot as plt
 from .config import XTCConfig
 
 
-def files_and_chnid(config: XTCConfig, data_dict: dict = None):
+def files_and_chnid(config: XTCConfig, data_dict: dict = None, return_names: bool = False):
     """Get hit/dsp file lists and channel IDs from configuration.
-    
+
     Parameters
     ----------
     config : XTCConfig
@@ -19,7 +19,10 @@ def files_and_chnid(config: XTCConfig, data_dict: dict = None):
         Dictionary specifying which periods/runs to use.
         Format: {"p08": ["r015", "r016"], "p09": ["r001"]}.
         If not provided, all available periods/runs will be used.
-    
+    return_names : bool, optional
+        If True, additionally return the list of germanium detector names.
+        Default False, which preserves the original 3-value return.
+
     Returns
     -------
     new_hit_list : list
@@ -27,7 +30,12 @@ def files_and_chnid(config: XTCConfig, data_dict: dict = None):
     new_dsp_list : list
         List of DSP file paths.
     chn_id : list
-        List of channel IDs for germanium detectors.
+        List of channel IDs (rawid) for germanium detectors.
+    det_names : list, optional
+        Only returned when ``return_names`` is True. Germanium detector
+        names in the same order as ``chn_id``; i.e. ``det_names[j]`` and
+        ``chn_id[j]`` refer to the same detector, which is also the
+        detector at row/column index ``j`` of the crosstalk matrix.
     """
     xtc_dir = config.xtc_dir
     dsp_dir_template = config.dsp_dir_template
@@ -141,7 +149,9 @@ def files_and_chnid(config: XTCConfig, data_dict: dict = None):
     chn_id = []
     for detector in geds:
         chn_id.append(chmap[detector]['daq']['rawid'])
-        
+
+    if return_names:
+        return new_hit_list, new_dsp_list, chn_id, geds
     return new_hit_list, new_dsp_list, chn_id
 
 def xtalk_element(E_trig, E_response, baseline_value):
