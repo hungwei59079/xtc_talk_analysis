@@ -66,14 +66,9 @@ OUT_DIR = Path(args.out_dir) if args.out_dir else REPO_ROOT / "results" / "zero_
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Thresholds.
-SELECTION_EMAX = 25    # keep events with detector-i energy below this
-SIGNAL_THRESHOLD = 50  # a detector "fired" (delta_j = 1) above this energy
-# Upper bound on a usable donor energy. The crosstalk matrix was fit with
-# trigger energies in (1500, 99999) keV (scripts/xtalk_batch.py:97); the linear
-# C*A_j model does not hold above it, and saturated / mis-calibrated events
-# carry huge *finite* cuspEmax_ctc_cal values that nan_to_num does not catch.
-# Donors above this energy are treated as not firing (delta_j = 0).
-SIGNAL_MAX = 99999
+SELECTION_EMAX = 25    
+SIGNAL_THRESHOLD = 50  
+SIGNAL_MAX = 9999
 
 config = XTCConfig(CONFIG_PATH, args.config_name)
 
@@ -118,13 +113,13 @@ selected_idxs = target_selection.selected_idxs
 # drops NaN, so -inf events survive the < 25 cut; remove them here so they
 # cannot poison the histogram range or the corrected energies. selected_idxs
 # is filtered in lockstep to stay event-aligned with the donor reads below.
-finite_mask = np.isfinite(uncorrected)
-n_nonfinite = int(np.count_nonzero(~finite_mask))
-if n_nonfinite:
-    print(f"Dropped {n_nonfinite} selected events with non-finite energy")
-uncorrected = uncorrected[finite_mask]
-selected_idxs = selected_idxs[finite_mask]
-print(f"Selected {len(uncorrected)} events with cuspEmax_ctc_cal < {SELECTION_EMAX}")
+#finite_mask = np.isfinite(uncorrected)
+#n_nonfinite = int(np.count_nonzero(~finite_mask))
+#if n_nonfinite:
+   # print(f"Dropped {n_nonfinite} selected events with non-finite energy")
+#uncorrected = uncorrected[finite_mask]
+#selected_idxs = selected_idxs[finite_mask]
+#print(f"Selected {len(uncorrected)} events with cuspEmax_ctc_cal < {SELECTION_EMAX}")
 
 # --- Step 4: per-event crosstalk correction ----------------------------------
 # correction[e] = - sum_{j != i} (C[j,i]/100) * A_j[e] * delta_j[e]
@@ -143,9 +138,6 @@ for j in range(n_det):
             ene_dataset="cuspEmax_ctc_cal",
             idx=selected_idxs,
         )
-        # energy_all_indexed is aligned event-by-event with selected_idxs.
-        # Map NaN and +/-inf alike to 0 so a non-firing or sentinel-valued
-        # donor contributes nothing (default nan_to_num turns inf into ~1e308).
         a_j = np.nan_to_num(
             donor.energy_all_indexed, nan=0.0, posinf=0.0, neginf=0.0
         )
@@ -162,9 +154,6 @@ for j in range(n_det):
             f"energy > {SIGNAL_MAX} (max {a_j.max():.4g}) excluded from the "
             f"correction -- likely saturated / mis-calibrated"
         )
-    # Only physically-modelled signals (SIGNAL_THRESHOLD < A_j <= SIGNAL_MAX)
-    # contribute; the upper cap is what stops a single garbage donor energy
-    # from producing a runaway correction.
     delta_j = (fired & ~over_cap).astype(float)
     correction += crosstalk_col[j] * a_j * delta_j
     print(f"correction contribution from detector {j} completed")
