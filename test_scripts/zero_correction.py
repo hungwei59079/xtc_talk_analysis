@@ -73,7 +73,7 @@ SIGNAL_MAX = 9999
 config = XTCConfig(CONFIG_PATH, args.config_name)
 
 new_hit_list, new_dsp_list, evt_list, chn_id = files_and_chnid(
-    config, tiers=("hit", "dsp", "evt")
+    config, tiers=("hit", "dsp", "evt"), on_mismatch="drop"
 )
 n_det = len(chn_id)
 
