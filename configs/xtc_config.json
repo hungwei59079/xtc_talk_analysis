@@ -20,7 +20,8 @@
       "xtc_dir": "/global/cfs/projectdirs/m2676/data/lngs/l200/public/prodenv/prod-blind/auto/v2.0.0",
       "path_templates": {
         "hit_dir": "{xtc_dir}/generated/tier/hit/ssc/{period}/{run}",
-        "dsp_dir": "{xtc_dir}/generated/tier/dsp/ssc/{period}/{run}"
+        "dsp_dir": "{xtc_dir}/generated/tier/dsp/ssc/{period}/{run}",
+        "evt_dir": "{xtc_dir}/generated/tier/dsp/evt/{period}/{run}"
       },
       "number_of_detectors": 60,
       "baseline_conditions": {"is_empty_candidate": 63},
@@ -36,7 +37,8 @@
       "xtc_dir": "/global/cfs/projectdirs/m2676/data/lngs/l200/public/prodenv/prod-blind/auto/v2.0.0",
       "path_templates": {
         "hit_dir": "{xtc_dir}/generated/tier/hit/phy/{period}/{run}",
-        "dsp_dir": "{xtc_dir}/generated/tier/dsp/phy/{period}/{run}"
+        "dsp_dir": "{xtc_dir}/generated/tier/dsp/phy/{period}/{run}",
+        "evt_dir": "{xtc_dir}/generated/tier/dsp/evt/{period}/{run}"
       },
       "number_of_detectors": 60,
       "baseline_conditions": {"is_empty_candidate": 63},
@@ -52,7 +54,8 @@
       "xtc_dir": "/global/cfs/projectdirs/m2676/data/lngs/l200/public/prodenv/prod-blind/auto/v2.0.0",
       "path_templates": {
         "hit_dir": "{xtc_dir}/generated/tier/hit/rdc/{period}/{run}",
-        "dsp_dir": "{xtc_dir}/generated/tier/dsp/rdc/{period}/{run}"
+        "dsp_dir": "{xtc_dir}/generated/tier/dsp/rdc/{period}/{run}",
+        "evt_dir": "{xtc_dir}/generated/tier/dsp/evt/{period}/{run}"
       },
       "number_of_detectors": 60,
       "baseline_conditions": {"is_empty_candidate": 63},

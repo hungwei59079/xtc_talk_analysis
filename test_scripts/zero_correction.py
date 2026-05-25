@@ -72,7 +72,9 @@ SIGNAL_MAX = 9999
 
 config = XTCConfig(CONFIG_PATH, args.config_name)
 
-new_hit_list, new_dsp_list, chn_id = files_and_chnid(config)
+new_hit_list, new_dsp_list, evt_list, chn_id = files_and_chnid(
+    config, tiers=("hit", "dsp", "evt")
+)
 n_det = len(chn_id)
 
 detector_index = args.detector_index
@@ -100,11 +102,18 @@ crosstalk_col = np.nan_to_num(
     agg_matrix[:, detector_index], nan=0.0, posinf=0.0, neginf=0.0
 ) / 100.0
 
+event_selection = EventSelector(
+    table_path=f"evt/coincident/",
+    files=evt_list,
+    ene_dataset="geds",
+    conditions={"puls" : False}
+)
 target_selection = EventSelector(
     table_path=f"ch{detector}/hit/",
     files=new_hit_list,
     ene_dataset="cuspEmax_ctc_cal",
     energy_range=(-3 * SELECTION_EMAX, SELECTION_EMAX),
+    idx=event_selection.selected_idxs,
 )
 uncorrected = target_selection.selected_energies
 selected_idxs = target_selection.selected_idxs

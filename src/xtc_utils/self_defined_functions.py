@@ -8,8 +8,13 @@ import matplotlib.pyplot as plt
 from .config import XTCConfig
 
 
-def files_and_chnid(config: XTCConfig, data_dict: dict = None, return_names: bool = False):
-    """Get hit/dsp file lists and channel IDs from configuration.
+def files_and_chnid(
+    config: XTCConfig,
+    data_dict: dict = None,
+    tiers=("hit", "dsp"),
+    return_names: bool = False,
+):
+    """Get per-tier file lists and channel IDs from configuration.
 
     Parameters
     ----------
@@ -19,16 +24,21 @@ def files_and_chnid(config: XTCConfig, data_dict: dict = None, return_names: boo
         Dictionary specifying which periods/runs to use.
         Format: {"p08": ["r015", "r016"], "p09": ["r001"]}.
         If not provided, all available periods/runs will be used.
+    tiers : iterable of str, optional
+        Tier names to collect file lists for. Each name ``t`` must have a
+        corresponding ``"{t}_dir"`` entry in the config's ``path_templates``
+        (e.g. ``"hit"`` -> ``hit_dir``). Files are matched by the convention
+        ``{key}-tier_{t}.lh5``. Default ``("hit", "dsp")`` preserves the
+        original return shape.
     return_names : bool, optional
         If True, additionally return the list of germanium detector names.
-        Default False, which preserves the original 3-value return.
+        Default False.
 
     Returns
     -------
-    new_hit_list : list
-        List of hit file paths.
-    new_dsp_list : list
-        List of DSP file paths.
+    *file_lists : list
+        One sorted list of file paths per requested tier, in the same order
+        as ``tiers``.
     chn_id : list
         List of channel IDs (rawid) for germanium detectors.
     det_names : list, optional
@@ -37,10 +47,26 @@ def files_and_chnid(config: XTCConfig, data_dict: dict = None, return_names: boo
         ``chn_id[j]`` refer to the same detector, which is also the
         detector at row/column index ``j`` of the crosstalk matrix.
     """
+    tiers = tuple(tiers)
+    if not tiers:
+        raise ValueError("`tiers` must contain at least one tier name.")
+
     xtc_dir = config.xtc_dir
-    dsp_dir_template = config.dsp_dir_template
-    hit_dir_template = config.hit_dir_template
     full_data_dict = config.available_periods
+    path_templates = config.path_templates
+
+    # Resolve a directory template for every requested tier up front so a
+    # typo or a dataset that lacks the tier fails before any I/O.
+    missing = [t for t in tiers if f"{t}_dir" not in path_templates]
+    if missing:
+        available = sorted(
+            k[:-len("_dir")] for k in path_templates if k.endswith("_dir")
+        )
+        raise KeyError(
+            f"Tier(s) {missing} not in path_templates of config "
+            f"'{config.config_name}'. Available tiers: {available}."
+        )
+    dir_templates = {t: path_templates[f"{t}_dir"] for t in tiers}
 
     # check if all periods and runs in data_dict are in full_data_dict
     if data_dict is not None:
@@ -52,8 +78,7 @@ def files_and_chnid(config: XTCConfig, data_dict: dict = None, return_names: boo
                     print(f"Warning: Run {run} not found in configuration for period {period}. It will be skipped.")
 
     lmeta = TextDB(path=f"{xtc_dir}/inputs")
-    new_hit_list = []
-    new_dsp_list = []
+    tier_files = {t: [] for t in tiers}
 
     for period in full_data_dict.keys():
         for run in full_data_dict[period]:
@@ -63,49 +88,46 @@ def files_and_chnid(config: XTCConfig, data_dict: dict = None, return_names: boo
                 if run not in data_dict[period]:
                     continue
             print(f"searching for files for {period}, {run}......")
-            dsp_dir = dsp_dir_template.format(xtc_dir=xtc_dir, period=period, run=run)
-            hit_dir = hit_dir_template.format(xtc_dir=xtc_dir, period=period, run=run)
+            tier_dirs = {
+                t: dir_templates[t].format(xtc_dir=xtc_dir, period=period, run=run)
+                for t in tiers
+            }
 
             try:
                 valid_file = f"{xtc_dir}/generated/par/valid_keys/l200-{period}-{run}-valid_xtc.json"
                 valid_keys = list(Props.read_from(valid_file)["valid_keys"])
-                time_string = valid_keys[0].split("-")[-1]
-            
-                dsp_list = [f"{dsp_dir}/{key}-tier_dsp.lh5" for key in valid_keys] 
-                hit_list = [f"{hit_dir}/{key}-tier_hit.lh5" for key in valid_keys]
-            
-                # Remove non-existent files from the lists
-            
-                listed_files = set(os.path.basename(f) for f in hit_list)
-                actual_files = set(os.listdir(hit_dir))
-                non_existent_files = listed_files - actual_files
-                for f in hit_list:
-                    if os.path.basename(f) not in non_existent_files:
-                        new_hit_list.append(f)
-            
-                listed_files = set(os.path.basename(f) for f in dsp_list)
-                actual_files = set(os.listdir(dsp_dir))
-                non_existent_files = listed_files - actual_files
-                for f in dsp_list:
-                    if os.path.basename(f) not in non_existent_files:
-                        new_dsp_list.append(f)
-            except:
-                print("Could not find valid_xtc.json; using all files in hit and dsp directories.")
-                new_hit_list += [f"{hit_dir}/{f}" for f in os.listdir(hit_dir) if f.endswith(".lh5")]
-                new_dsp_list += [f"{dsp_dir}/{f}" for f in os.listdir(dsp_dir) if f.endswith(".lh5")]
 
-    new_dsp_list = sorted(new_dsp_list)
-    new_hit_list = sorted(new_hit_list)
+                # Per tier: build candidates from valid_keys then keep only
+                # the files that actually exist on disk.
+                for t in tiers:
+                    tdir = tier_dirs[t]
+                    actual = set(os.listdir(tdir))
+                    for key in valid_keys:
+                        fname = f"{key}-tier_{t}.lh5"
+                        if fname in actual:
+                            tier_files[t].append(f"{tdir}/{fname}")
+            except Exception:
+                print("Could not find valid_xtc.json; using all files in tier directories.")
+                for t in tiers:
+                    tdir = tier_dirs[t]
+                    tier_files[t] += [
+                        f"{tdir}/{f}" for f in os.listdir(tdir) if f.endswith(".lh5")
+                    ]
 
-    # Print summary of collected hit files
+    for t in tiers:
+        tier_files[t] = sorted(tier_files[t])
+
+    # Summarize the primary (first) tier; assumed representative because the
+    # cross-tier timestring check below enforces consistency.
+    primary = tiers[0]
+    primary_files = tier_files[primary]
     print(f"\n{'='*50}")
-    print(f"Summary of collected hit files:")
-    print(f"  Total number of files: {len(new_hit_list)}")
-    
-    # Extract periods and runs from file paths
+    print(f"Summary of collected {primary} files:")
+    print(f"  Total number of files: {len(primary_files)}")
+
+    # Extract periods and runs from file paths (e.g., .../p10/r005/...)
     periods_runs = {}
-    for f in new_hit_list:
-        # Parse the path to extract period and run (e.g., .../p10/r005/...)
+    for f in primary_files:
         parts = f.split('/')
         for i, part in enumerate(parts):
             if part.startswith('p') and part[1:].isdigit():
@@ -118,41 +140,30 @@ def files_and_chnid(config: XTCConfig, data_dict: dict = None, return_names: boo
                         periods_runs[period][run] = 0
                     periods_runs[period][run] += 1
                 break
-    
+
     print(f"  Periods and runs included:")
     for period in sorted(periods_runs.keys()):
         runs_info = ", ".join([f"{run} ({count} files)" for run, count in sorted(periods_runs[period].items())])
         print(f"    {period}: {runs_info}")
     print(f"{'='*50}\n")
 
-    #Check if timestrings match
-    hit_timestrings = [f.split("-")[-2] for f in new_hit_list]
-    dsp_timestrings = [f.split("-")[-2] for f in new_dsp_list]
-    # print(hit_timestrings)
-    if set(hit_timestrings) != set(dsp_timestrings):
-        raise ValueError("Hit and DSP files have mismatched time strings.")
-    time_string = hit_timestrings[0]
+    # Timestrings must agree across tiers so EventSelector indices line up.
+    ref_timestrings = set(f.split("-")[-2] for f in primary_files)
+    for t in tiers[1:]:
+        if set(f.split("-")[-2] for f in tier_files[t]) != ref_timestrings:
+            raise ValueError(
+                f"{primary} and {t} files have mismatched time strings."
+            )
+    time_string = primary_files[0].split("-")[-2]
 
-    #Check if number of events match
-    """
-    hit_table = lh5.read('/ch1078400/hit/', new_hit_list)
-    dsp_table = lh5.read('/ch1078400/dsp/', new_dsp_list)
-    print(f"hit_table_length: {len(hit_table)}; dsp_table_length:{len(dsp_table)}")
-    if len(hit_table) != len(dsp_table):
-        raise ValueError("Hit and dsp tables have unequal number of events.")
-    """
-    
-    #Now we can obtain the raw ids using the .on() utility.
-    
     chmap = lmeta.hardware.configuration.channelmaps.on(time_string)
-    geds = [ch for ch in chmap.keys() if chmap[ch]['system']=='geds']
-    chn_id = []
-    for detector in geds:
-        chn_id.append(chmap[detector]['daq']['rawid'])
+    geds = [ch for ch in chmap.keys() if chmap[ch]['system'] == 'geds']
+    chn_id = [chmap[detector]['daq']['rawid'] for detector in geds]
 
+    file_lists = tuple(tier_files[t] for t in tiers)
     if return_names:
-        return new_hit_list, new_dsp_list, chn_id, geds
-    return new_hit_list, new_dsp_list, chn_id
+        return (*file_lists, chn_id, geds)
+    return (*file_lists, chn_id)
 
 def xtalk_element(E_trig, E_response, baseline_value):
     # Check if baseline_value is numerical
