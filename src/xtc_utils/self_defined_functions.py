@@ -13,6 +13,7 @@ def files_and_chnid(
     data_dict: dict = None,
     tiers=("hit", "dsp"),
     return_names: bool = False,
+    on_mismatch: str = "raise",
 ):
     """Get per-tier file lists and channel IDs from configuration.
 
@@ -33,6 +34,14 @@ def files_and_chnid(
     return_names : bool, optional
         If True, additionally return the list of germanium detector names.
         Default False.
+    on_mismatch : {"raise", "drop"}, optional
+        How to handle files whose timestring is present in some tiers but not
+        every tier (e.g. one tier is short a file). ``"raise"`` (default)
+        prints which timestrings are missing where and raises ``ValueError``.
+        ``"drop"`` drops the unmatched files from every tier so the returned
+        lists are pairwise consistent, printing what was dropped. Use
+        ``"drop"`` deliberately, per-call -- it is not the default precisely
+        so that an unexpected mismatch in a new run is not silenced.
 
     Returns
     -------
@@ -117,6 +126,55 @@ def files_and_chnid(
     for t in tiers:
         tier_files[t] = sorted(tier_files[t])
 
+    # Cross-tier timestring consistency. The orphans are the timestrings
+    # present in some tiers but not in the intersection across all tiers.
+    # on_mismatch controls policy: 'raise' (default, loud) or 'drop' (opt-in).
+    tier_timestrings = {
+        t: set(f.split("-")[-2] for f in tier_files[t]) for t in tiers
+    }
+    common = set.intersection(*tier_timestrings.values()) if tier_timestrings else set()
+    extras = {t: sorted(tier_timestrings[t] - common) for t in tiers}
+    if any(extras[t] for t in tiers):
+        if on_mismatch == "drop":
+            if not common:
+                raise ValueError(
+                    "Cannot drop unmatched files: no timestring is present "
+                    "in every tier (intersection is empty). Inspect the per-"
+                    "tier summary to see what is going on."
+                )
+            total = sum(len(v) for v in extras.values())
+            print(
+                f"\n[mismatch] dropping {total} file(s) whose timestrings "
+                f"are not present in every tier:"
+            )
+            for t in tiers:
+                if extras[t]:
+                    sample = extras[t][:5]
+                    tail = " ..." if len(extras[t]) > 5 else ""
+                    print(f"  {t}: {len(extras[t])} dropped -- {sample}{tail}")
+                    tier_files[t] = [
+                        f for f in tier_files[t] if f.split("-")[-2] in common
+                    ]
+        elif on_mismatch == "raise":
+            lines = [
+                f"Tier files have mismatched timestrings across {list(tiers)}."
+            ]
+            for t in tiers:
+                if extras[t]:
+                    sample = extras[t][:5]
+                    tail = " ..." if len(extras[t]) > 5 else ""
+                    lines.append(
+                        f"  In {t} only ({len(extras[t])}): {sample}{tail}"
+                    )
+            lines.append(
+                "Pass on_mismatch='drop' to drop the unmatched files instead."
+            )
+            raise ValueError("\n".join(lines))
+        else:
+            raise ValueError(
+                f"on_mismatch must be 'raise' or 'drop', got {on_mismatch!r}."
+            )
+
     # Per-tier file counts broken down by (period, run). The table form makes
     # mismatched counts (a tier short some files for a given run) visible at
     # a glance and is cheap -- pure in-memory string splitting, not I/O.
@@ -161,13 +219,6 @@ def files_and_chnid(
         print(f"  {period:<7}{run:<6}{cells}{flag}")
     print(f"{'='*max(50, len(header) + 14)}\n")
 
-    # Timestrings must agree across tiers so EventSelector indices line up.
-    ref_timestrings = set(f.split("-")[-2] for f in primary_files)
-    for t in tiers[1:]:
-        if set(f.split("-")[-2] for f in tier_files[t]) != ref_timestrings:
-            raise ValueError(
-                f"{primary} and {t} files have mismatched time strings."
-            )
     time_string = primary_files[0].split("-")[-2]
 
     chmap = lmeta.hardware.configuration.channelmaps.on(time_string)
