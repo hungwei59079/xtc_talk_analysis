@@ -117,35 +117,49 @@ def files_and_chnid(
     for t in tiers:
         tier_files[t] = sorted(tier_files[t])
 
-    # Summarize the primary (first) tier; assumed representative because the
-    # cross-tier timestring check below enforces consistency.
+    # Per-tier file counts broken down by (period, run). The table form makes
+    # mismatched counts (a tier short some files for a given run) visible at
+    # a glance and is cheap -- pure in-memory string splitting, not I/O.
     primary = tiers[0]
     primary_files = tier_files[primary]
-    print(f"\n{'='*50}")
-    print(f"Summary of collected {primary} files:")
-    print(f"  Total number of files: {len(primary_files)}")
 
-    # Extract periods and runs from file paths (e.g., .../p10/r005/...)
-    periods_runs = {}
-    for f in primary_files:
-        parts = f.split('/')
-        for i, part in enumerate(parts):
-            if part.startswith('p') and part[1:].isdigit():
-                period = part
-                if i + 1 < len(parts) and parts[i + 1].startswith('r'):
-                    run = parts[i + 1]
-                    if period not in periods_runs:
-                        periods_runs[period] = {}
-                    if run not in periods_runs[period]:
-                        periods_runs[period][run] = 0
-                    periods_runs[period][run] += 1
-                break
+    tier_counts = {}  # {tier: {period: {run: count}}}
+    for t in tiers:
+        counts = {}
+        for f in tier_files[t]:
+            parts = f.split('/')
+            for i, part in enumerate(parts):
+                if part.startswith('p') and part[1:].isdigit():
+                    if i + 1 < len(parts) and parts[i + 1].startswith('r'):
+                        period, run = part, parts[i + 1]
+                        counts.setdefault(period, {}).setdefault(run, 0)
+                        counts[period][run] += 1
+                    break
+        tier_counts[t] = counts
 
-    print(f"  Periods and runs included:")
-    for period in sorted(periods_runs.keys()):
-        runs_info = ", ".join([f"{run} ({count} files)" for run, count in sorted(periods_runs[period].items())])
-        print(f"    {period}: {runs_info}")
-    print(f"{'='*50}\n")
+    all_period_runs = sorted({
+        (period, run)
+        for counts in tier_counts.values()
+        for period, runs in counts.items()
+        for run in runs
+    })
+
+    col_w = max(8, max((len(t) for t in tiers), default=0) + 2)
+    header = f"  {'period':<7}{'run':<6}" + "".join(f"{t:>{col_w}}" for t in tiers)
+
+    print(f"\n{'='*max(50, len(header) + 14)}")
+    print("Summary of collected files:")
+    totals = "  ".join(f"{t}={len(tier_files[t])}" for t in tiers)
+    print(f"  Total files per tier: {totals}")
+    print()
+    print(header)
+    print(f"  {'-' * (len(header) - 2)}")
+    for period, run in all_period_runs:
+        row_counts = [tier_counts[t].get(period, {}).get(run, 0) for t in tiers]
+        flag = "" if len(set(row_counts)) <= 1 else "  <- mismatch"
+        cells = "".join(f"{c:>{col_w}}" for c in row_counts)
+        print(f"  {period:<7}{run:<6}{cells}{flag}")
+    print(f"{'='*max(50, len(header) + 14)}\n")
 
     # Timestrings must agree across tiers so EventSelector indices line up.
     ref_timestrings = set(f.split("-")[-2] for f in primary_files)
