@@ -108,15 +108,25 @@ event_selection = EventSelector(
     ene_dataset="geds",
     conditions={"puls" : False}
 )
-target_selection = EventSelector(
+broad_selection = EventSelector(
     table_path=f"ch{detector}/hit/",
     files=new_hit_list,
     ene_dataset="cuspEmax_ctc_cal",
-    energy_range=(-3 * SELECTION_EMAX, SELECTION_EMAX),
     idx=event_selection.selected_idxs,
 )
-uncorrected = target_selection.selected_energies
-selected_idxs = target_selection.selected_idxs
+
+raw_energies = broad_selection.selected_energies
+raw_idxs = broad_selection.selected_idxs
+
+lower_bound = np.nanpercentile(raw_energies, 0.5)
+upper_bound = np.nanpercentile(raw_energies, 99.5)
+
+print(f"Dynamic 99% energy range for detector {detector}: ({lower_bound:.2f}, {upper_bound:.2f})")
+
+mask = (raw_energies >= lower_bound) & (raw_energies <= upper_bound)
+
+uncorrected = raw_energies[mask]
+selected_idxs = raw_idxs[mask]
 
 correction = np.zeros(len(selected_idxs))
 n_capped_total = 0
