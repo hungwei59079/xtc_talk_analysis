@@ -66,7 +66,7 @@ OUT_DIR = Path(args.out_dir) if args.out_dir else REPO_ROOT / "results" / "zero_
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 # Thresholds.
-SELECTION_EMAX = 25    
+SELECTION_EMAX = 3  
 SIGNAL_THRESHOLD = 50  
 SIGNAL_MAX = 9999
 
@@ -118,20 +118,6 @@ target_selection = EventSelector(
 uncorrected = target_selection.selected_energies
 selected_idxs = target_selection.selected_idxs
 
-# cuspEmax_ctc_cal can hold non-finite sentinels (+/-inf). EventSelector only
-# drops NaN, so -inf events survive the < 25 cut; remove them here so they
-# cannot poison the histogram range or the corrected energies. selected_idxs
-# is filtered in lockstep to stay event-aligned with the donor reads below.
-#finite_mask = np.isfinite(uncorrected)
-#n_nonfinite = int(np.count_nonzero(~finite_mask))
-#if n_nonfinite:
-   # print(f"Dropped {n_nonfinite} selected events with non-finite energy")
-#uncorrected = uncorrected[finite_mask]
-#selected_idxs = selected_idxs[finite_mask]
-#print(f"Selected {len(uncorrected)} events with cuspEmax_ctc_cal < {SELECTION_EMAX}")
-
-# --- Step 4: per-event crosstalk correction ----------------------------------
-# correction[e] = - sum_{j != i} (C[j,i]/100) * A_j[e] * delta_j[e]
 correction = np.zeros(len(selected_idxs))
 n_capped_total = 0
 for j in range(n_det):
@@ -183,7 +169,7 @@ else:
 # --- Step 6: overlay histogram -----------------------------------------------
 lo = min(uncorrected.min(), corrected.min())
 hi = max(uncorrected.max(), corrected.max())
-bins = np.linspace(lo, hi, 101)
+bins = np.linspace(lo, hi, 5001)
 
 plt.figure(figsize=(10, 6))
 plt.hist(uncorrected, bins=bins, histtype="step", linewidth=1.5,

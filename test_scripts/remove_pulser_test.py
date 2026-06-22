@@ -65,11 +65,16 @@ pulser_selector = EventSelector(
     ene_dataset="geds",
     conditions={"puls" : False}
 )
-trapTmax_selector = EventSelector(
-    table_path=f"ch{detector}/dsp/",
-    files=new_dsp_list,
-    ene_dataset="trapTmax",
+cuspEmax_selector = EventSelector(
+    table_path=f"ch{detector}/hit/",
+    files=new_hit_list,
+    ene_dataset="cuspEmax_ctc_cal",
     idx=pulser_selector.selected_idxs,
+    energy_range=(1500,9999)
 )
 
-trapTmax_selector.draw(OUTDIR / f"detector_{detector}_trapTmax_histogram.png")
+cuspEmax_selector.draw(
+    fig_path=OUTDIR / f"detector_{detector}_cuspEmax_histogram.png",
+    plot_range=(0, 15000),  # Zooms into the 0 to 15,000 region
+    bins_count=150          # Gives a clean 100-unit width per bin!
+)

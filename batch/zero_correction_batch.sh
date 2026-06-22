@@ -20,7 +20,7 @@ CONFIG_NAME="xtc_p16_phy"
 # These live directly under results/, not in a per-run subdirectory.
 POS_MATRIX="results/pos_restrained_xtalk_matrix.csv"
 NEG_MATRIX="results/neg_restrained_xtalk_matrix.csv"
-OUT_DIR="results/Inspected_histograms"
+OUT_DIR="results/Inspected_histograms/zero_correction"
 
 # -----------------------------
 # Setup

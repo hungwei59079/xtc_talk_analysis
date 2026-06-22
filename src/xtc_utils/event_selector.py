@@ -39,10 +39,29 @@ class EventSelector:
             self.selected_idxs = np.arange(len(self.energy_all))
             self.selected_idxs = self.selected_idxs[selection_array]
 
-    def draw(self, fig_path, y_scale='log'):
+    def draw(self, fig_path, y_scale='log', plot_range=None, bins_count=100):
         plt.figure(figsize=(10, 6))
-        plt.hist(self.energy_all, bins=100, alpha=0.5, label=f"Pre-selection({len(self.energy_all)})")
-        plt.hist(self.selected_energies, bins=100, alpha=0.5, label=f"Selected({len(self.selected_energies)})")
+        
+        if plot_range is not None:
+            xmin, xmax = plot_range
+            # Filtering
+            data_all = self.energy_all[(self.energy_all >= xmin) & (self.energy_all <= xmax)]
+            data_sel = self.selected_energies[(self.selected_energies >= xmin) & (self.selected_energies <= xmax)]
+        else:
+            xmin, xmax = np.min(self.energy_all), np.max(self.energy_all)
+            data_all = self.energy_all
+            data_sel = self.selected_energies
+
+        # 2. Calculate uniform bins strictly within this range
+        bins = np.linspace(xmin, xmax, bins_count)
+        
+        # 3. Plot the histograms using the filtered data and common bins
+        plt.hist(data_all, bins=bins, alpha=0.5, label=f"Pre-selection({len(self.energy_all)})")
+        plt.hist(data_sel, bins=bins, alpha=0.5, label=f"Selected({len(self.selected_energies)})")
+        
+        # 4. Set the x-axis limits to match the requested range
+        plt.xlim(xmin, xmax)
+        
         plt.xlabel('Energy')
         plt.ylabel('Counts')
         plt.yscale(y_scale)
