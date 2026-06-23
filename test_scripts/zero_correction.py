@@ -114,15 +114,26 @@ broad_selection = EventSelector(
     ene_dataset="cuspEmax_ctc_cal",
     idx=event_selection.selected_idxs,
 )
-
 raw_energies = broad_selection.selected_energies
 raw_idxs = broad_selection.selected_idxs
 
-lower_bound = np.nanpercentile(raw_energies, 0.5)
-upper_bound = np.nanpercentile(raw_energies, 99.5)
+rough_range = (-50, 50)
+counts, bin_edges = np.histogram(raw_energies, bins=1000, range=rough_range)
 
-print(f"Dynamic 99% energy range for detector {detector}: ({lower_bound:.2f}, {upper_bound:.2f})")
+# Find the peak height and calculate the 5% threshold
+max_counts = counts.max()
+threshold = 0.05 * max_counts
+above_thresh_indices = np.where(counts >= threshold)[0]
 
+if len(above_thresh_indices) == 0:
+    lower_bound, upper_bound = -10.0, 10.0
+else:
+    lower_bound = bin_edges[above_thresh_indices[0]]
+    upper_bound = bin_edges[above_thresh_indices[-1] + 1]
+
+print(f"Dynamic 5% threshold energy range for detector {detector}: ({lower_bound:.2f}, {upper_bound:.2f})")
+
+# 6. Apply the dynamic mask to filter your final arrays
 mask = (raw_energies >= lower_bound) & (raw_energies <= upper_bound)
 
 uncorrected = raw_energies[mask]
