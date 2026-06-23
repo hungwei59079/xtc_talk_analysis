@@ -140,6 +140,7 @@ uncorrected = raw_energies[mask]
 selected_idxs = raw_idxs[mask]
 
 correction = np.zeros(len(selected_idxs))
+has_correction = np.zeros(len(selected_idxs), dtype=bool) # Track non-zero contributions. Should be removed in the future.
 n_capped_total = 0
 for j in range(n_det):
     if j == detector_index:
@@ -170,12 +171,40 @@ for j in range(n_det):
             f"energy > {SIGNAL_MAX} (max {a_j.max():.4g}) excluded from the "
             f"correction -- likely saturated / mis-calibrated"
         )
+
+    valid_correction_event = fired & ~over_cap # These two lines are for tracking nonzero contributions. 
+    has_correction |= valid_correction_event # Should be removed in the future.
+
     delta_j = (fired & ~over_cap).astype(float)
     correction += crosstalk_col[j] * a_j * delta_j
     print(f"correction contribution from detector {j} completed")
 
+# Uncomment these two line when debugging is done
+# correction = -correction 
+# corrected = uncorrected + correction
+
+# ========== Non zero contributions tracking (for debugging) ==========
 correction = -correction
-corrected = uncorrected + correction
+corrected_full = uncorrected + correction
+ 
+# Calculate proportions
+n_total = len(selected_idxs)
+n_corrected = np.count_nonzero(has_correction)
+proportion = (n_corrected / n_total) * 100 if n_total > 0 else 0.0
+
+print("\n" + "="*40)
+print(f"Correction Summary for Detector {detector_index}:")
+print(f"  Total events in peak window: {n_total}")
+print(f"  Events receiving crosstalk correction: {n_corrected} ({proportion:.2f}%)")
+print("="*40 + "\n")
+
+# Filter arrays to keep ONLY events that received a nonzero correction
+print(f"Number of events before filtering: {len(uncorrected)}")
+uncorrected = uncorrected[has_correction]
+corrected = corrected_full[has_correction]
+selected_idxs = selected_idxs[has_correction]
+print(f"Number of events after filtering to nonzero correction: {len(uncorrected)}")
+# ===============================================
 
 if n_capped_total:
     print(
@@ -194,9 +223,9 @@ bins = np.linspace(lo, hi, 5001)
 
 plt.figure(figsize=(10, 6))
 plt.hist(uncorrected, bins=bins, histtype="step", linewidth=1.5,
-         label=f"Uncorrected (mean={np.mean(uncorrected):.3f})")
+         label=f"Uncorrected (mean={np.mean(uncorrected):.3f}, count={len(uncorrected)})")
 plt.hist(corrected, bins=bins, histtype="step", linewidth=1.5,
-         label=f"Corrected (mean={np.mean(corrected):.3f})")
+         label=f"Corrected (mean={np.mean(corrected):.3f}, count={len(corrected)})")
 plt.xlabel("cuspEmax_ctc_cal energy")
 plt.ylabel("Counts")
 plt.title(f"Crosstalk correction - detector index {detector_index} (ch{detector})")
