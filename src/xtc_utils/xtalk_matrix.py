@@ -2,10 +2,17 @@ import numpy as np
 import matplotlib.pyplot as plt
 from pathlib import Path
 
+from lgdo import lh5, types
+
 reason_dict = {"no_stats" : "no_stats",
                "low_stats" : "low_stats",
                "Optimal parameters not found: Number of calls to function has reached maxfev = 800.": "delta" ,
                "ok but with insufficient points" : "sharp"}
+
+# Maps the label prefix onto the field name used in the production xtc files.
+# "neg" and "neg_restrained" both land on "xtalk_matrix_negative".
+lh5_field_dict = {"neg": "xtalk_matrix_negative",
+                  "pos": "xtalk_matrix_positive"}
 
 class XTCMatrix:
     def __init__(self, n_detectors, label, **kwargs):
@@ -18,10 +25,6 @@ class XTCMatrix:
 
         # I/O Related
         self.load_path = Path(kwargs.get("load_path")) if kwargs.get("load_path", None) else None
-        self.save_path = Path(kwargs.get("save_path")) if kwargs.get("save_path", None) else None
-        self.imagename = kwargs.get("filename", f"{label}_xtalk_matrix.png")
-        self.csvname = kwargs.get("csvname", f"{label}_xtalk_matrix.csv")
-        self.sigma_csvname = kwargs.get("sigma_csvname", f"{label}_xtalk_matrix_sigma.csv")
 
         # Plot Related
         self.label = label
@@ -70,8 +73,10 @@ class XTCMatrix:
                     if not is_skipped_1 and not is_skipped_2 and raw_id_1 != raw_id_2:
                         self.fail_dict[abb_reason].append(f"({j1},{j2})")
     
-    def plot(self, path=None, cmap=plt.cm.jet_r):
-        self.save_path = Path(path) if path is not None else self.save_path
+    def plot(self, path=None, filename=None, cmap=plt.cm.jet_r):
+        save_path = Path(path) if path is not None else Path.cwd()
+        filename = filename if filename is not None else f"{self.label}_xtalk_matrix.png"
+
         plt.figure(figsize=(8, 6))
         im = plt.imshow(self.matrix, origin="lower", vmin=self.vmin, vmax=self.vmax, cmap=cmap)
         plt.colorbar(im, label=self.cbar_label)
@@ -80,13 +85,105 @@ class XTCMatrix:
         plt.ylabel('Trigger Channel Index')
         plt.title(self.title)
         plt.tight_layout()
-        plt.savefig(self.save_path / self.imagename)
+        plt.savefig(save_path / filename)
         plt.close()
 
-    def save_csv(self, path=None):
-        self.save_path = Path(path) if path is not None else self.save_path
-        np.savetxt(self.save_path / self.csvname, self.matrix, delimiter=",", fmt="%.6f")
-        np.savetxt(self.save_path / self.sigma_csvname, self.sigma_matrix, delimiter=",", fmt="%.6f")
+    def save_csv(self, path=None, filename=None, sigma_filename=None):
+        save_path = Path(path) if path is not None else Path.cwd()
+        filename = filename if filename is not None else f"{self.label}_xtalk_matrix.csv"
+        sigma_filename = (sigma_filename if sigma_filename is not None
+                          else f"{self.label}_xtalk_matrix_sigma.csv")
+
+        np.savetxt(save_path / filename, self.matrix, delimiter=",", fmt="%.6f")
+        np.savetxt(save_path / sigma_filename, self.sigma_matrix, delimiter=",", fmt="%.6f")
+
+    @property
+    def lh5_field(self):
+        """Field name this label is stored under in an xtc lh5 file."""
+        for prefix, field in lh5_field_dict.items():
+            if self.label.startswith(prefix):
+                return field
+        raise ValueError(
+            f"Label {self.label!r} does not start with any of "
+            f"{list(lh5_field_dict)}, so there is no lh5 field name for it. "
+            f"Pass field=... to save_lh5() to name it explicitly."
+        )
+
+    def save_lh5(self, chn_id, path=None, filename=None, group="xtc",
+                 field=None, save_sigma=True, in_percent=True):
+        """Write the matrix into an lh5 file in the production xtc layout.
+
+        The file holds a single table (``group``) whose columns are
+        ``rawid_index`` (the rawid of the detector at each matrix row/column
+        index) plus one 2D matrix per label. Calling this on a file that
+        already has the table appends the new column(s) instead of replacing
+        it, so several XTCMatrix objects can write into one file. Re-writing a
+        column that is already present overwrites it.
+
+        Parameters
+        ----------
+        chn_id : sequence of int
+            rawids in matrix-index order, i.e. ``chn_id[j]`` is the detector
+            at row/column ``j``. This is the ``chn_id`` returned by
+            :func:`files_and_chnid`, and it is stored as ``rawid_index``.
+        path : str or Path, optional
+            Directory to write into. Defaults to the current directory.
+        filename : str, optional
+            File name. Defaults to ``"par_evt_xtc.lh5"``.
+        group : str, optional
+            Table name inside the file. Default ``"xtc"``.
+        field : str, optional
+            Column name for the matrix. Defaults to the name implied by the
+            label (see :attr:`lh5_field`).
+        save_sigma : bool, optional
+            Also write the fit uncertainties as ``{field}_sigma``. This is an
+            extra column the production files do not have. Default True.
+        in_percent : bool, optional
+            Whether ``self.matrix`` is in percent. Production xtc files store
+            fractions, so when True (the default) the values are divided by
+            100 on the way out.
+        """
+        save_path = Path(path) if path is not None else Path.cwd()
+        filename = filename if filename is not None else "par_evt_xtc.lh5"
+        field = field if field is not None else self.lh5_field
+
+        chn_id = np.asarray(chn_id, dtype=np.int64)
+        if len(chn_id) != self.n_detectors:
+            raise ValueError(
+                f"Length of chn_id ({len(chn_id)}) does not match n_detectors "
+                f"({self.n_detectors})."
+            )
+
+        scale = 0.01 if in_percent else 1.0
+        columns = {field: types.Array(self.matrix * scale)}
+        if save_sigma:
+            columns[f"{field}_sigma"] = types.Array(self.sigma_matrix * scale)
+
+        lh5_path = save_path / filename
+        table = None
+        if lh5_path.exists() and group in lh5.ls(str(lh5_path)):
+            table = lh5.read(group, str(lh5_path))
+            existing = table["rawid_index"].nda
+            if not np.array_equal(existing, chn_id):
+                raise ValueError(
+                    f"{lh5_path} already holds a '{group}' table whose "
+                    f"rawid_index differs from the chn_id passed in. Refusing "
+                    f"to append a matrix whose rows mean something different "
+                    f"from the ones already in the file."
+                )
+            for name, column in columns.items():
+                if name in table.keys():
+                    table.remove_column(name)
+                table.add_column(name, column)
+
+        if table is None:
+            columns = {"rawid_index": types.Array(chn_id), **columns}
+            table = types.Table(col_dict=columns)
+            lh5.write(table, group, str(lh5_path), wo_mode="write_safe")
+        else:
+            lh5.write(table, group, str(lh5_path), wo_mode="overwrite")
+
+        print(f"Wrote {self.label} matrix to {lh5_path}:{group}/{field}")
 
     def diagnose(self):
         print(f"Scenarios encountered for {self.label} matrix: {self.scenarios}")
