@@ -24,7 +24,7 @@ for job_id, params in jobs.items():
         # Dump the specific data_dict to a file for this single run
         filter_path = temp_path / "data_filter.json"
         with open(filter_path, "w") as f:
-            json.dump(params["data_dict"], f, indent=2)
+            json.dump(params.get("data_dict", None), f, indent=2)
             
         # Pass parameters to sbatch via --export
         # Variables exported: CONFIG_PATH, CONFIG_NAME, TEMP_RESULT_LOC, DATA_DICT_PATH
