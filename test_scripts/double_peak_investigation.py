@@ -32,13 +32,19 @@ parser.add_argument("--temp_result_dir",
                     help="Path to the temp_results directory containing parameters and metadata.",
                     default=find_repo_root(Path(__file__).resolve()) / "temp_results"
                     )
+parser.add_argument("--outdir", type=str, default=None,
+                    help="Output directory for the split indices and values. ")
 args = parser.parse_args()
 
-j1 = args.j1
-j2 = args.j2
+j1 = int(args.j1)
+j2 = int(args.j2)
+cut_value = float(args.cut)
 
 REPO_ROOT = find_repo_root(Path(__file__).resolve())
-OUTDIR = REPO_ROOT / "results" / "Inspected_histograms"
+if args.outdir is None:
+    OUTDIR = REPO_ROOT / "results" / "Inspected_histograms"
+else:
+    OUTDIR = Path(args.outdir)
 OUTDIR.mkdir(parents=True, exist_ok=True)
 
 PARAMS_PATH = Path(args.temp_result_dir) / "parameters"
@@ -121,13 +127,13 @@ if neg_vals.size == 0:
 # ---------- Split into below / above the cut ----------
 # Masks index selected-event position; final_idxs maps them to original indices.
 cut_array = neg_vals if args.cut_on == "neg" else pos_vals
-below_mask = cut_array < args.cut
+below_mask = cut_array < cut_value
 above_mask = ~below_mask
 
 below_idx = final_idxs[below_mask]
 above_idx = final_idxs[above_mask]
 
-print(f"Cut on {args.cut_on}_vals at {args.cut}: "
+print(f"Cut on {args.cut_on}_vals at {cut_value}: "
       f"below={below_idx.size}, above={above_idx.size}, total={cut_array.size}")
 
 out_path = OUTDIR / f"xtalk_split_{j1}_{j2}_{args.cut_on}.npz"
@@ -139,7 +145,7 @@ np.savez_compressed(
     above_neg_vals=neg_vals[above_mask],
     below_pos_vals=pos_vals[below_mask],
     above_pos_vals=pos_vals[above_mask],
-    cut=np.array(args.cut),
+    cut=np.array(cut_value),
     cut_on=np.array(args.cut_on),
     j1=np.array(j1),
     j2=np.array(j2),
