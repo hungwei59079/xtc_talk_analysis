@@ -9,3 +9,5 @@ results/
 __pycache__/
 *.pyc
 
+# ignore test parameter config file bc it often changes
+configs/parameters_for_test.yaml

@@ -71,6 +71,8 @@ if len(response_energy) != len(trigger_energy):
 
 crosstalk_value = crosstalk_col[trigger_index]
 
+print(f"Crosstalk value: {crosstalk_value:.6f} ")
+
 correction = crosstalk_value * trigger_energy
 correction = -correction
 corrected_energy = response_energy + correction
