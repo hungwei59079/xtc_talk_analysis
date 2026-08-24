@@ -1,0 +1,13 @@
+def prepare_baseline(hit_files: str | list, dsp_files: str | list, 
+                     chn_id: str | list, temp_dir: str | Path) -> None: 
+    raise NotImplementedError()
+
+def xtalk_column(hit_files: str | list, dsp_files: str | list, 
+                 trigger_detector_id: str, chn_id_list: list, temp_dir: str | Path) -> None:
+    raise NotImplementedError()
+
+def xtalk_histogram_fitter(trigger_detector_id: str, temp_dir: str | Path, config: dict | None) -> None:
+    raise NotImplementedError()
+
+def build_xtalk_matrix(chn_id_list: list, temp_dir: str | Path, out_dir: str | Path, config: dict | None) -> None:
+    raise NotImplementedError()
