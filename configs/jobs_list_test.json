@@ -1,8 +1,7 @@
 {
-  "job_ssc_r008": {
+  "job_p08_r015": {
       "config_path": "configs/xtc_config.json",
-      "config_name": "xtc_p16_ssc",
-      "temp_result_loc": "/pscratch/sd/h/hungwei/temp_results_ssc_r008",
-      "data_dict": {"p16": ["r008"]}
+      "config_name": "xtc_old",
+      "temp_result_loc": "/pscratch/sd/h/hungwei/temp_results_p08"
     }
 }

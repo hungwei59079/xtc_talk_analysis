@@ -4,9 +4,16 @@ from lgdo import lh5
 from dbetto import TextDB, Props
 from pathlib import Path
 import matplotlib.pyplot as plt
+import yaml
 
 from .config import XTCConfig
 
+def get_test_args(yaml_path, script_name):
+    with open(yaml_path, "r") as f:
+        parameters = yaml.safe_load(f)
+
+    args = parameters["arguments"][script_name]
+    return args
 
 def files_and_chnid(
     config: XTCConfig,

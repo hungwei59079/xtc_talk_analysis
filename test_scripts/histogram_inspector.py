@@ -35,6 +35,11 @@ parser.add_argument(
     "--histo_dir",
     help="directory storing histograms"
 )
+parser.add_argument(
+    "--out_dir",
+    help="directory to store inspected histograms",
+    default="results/Inspected_histograms"
+)
 args = parser.parse_args()
 
 j1 = args.j1
@@ -51,7 +56,7 @@ FIT_DIR = Path(args.fit_dir)
 HISTO_DIR = Path(args.histo_dir)
 fit_npz_path = FIT_DIR / f"fit_{label}_{j1}_{j2}.npz"
 histo_npz_path = HISTO_DIR / f"xtalk_{j1}_{j2}.npz"
-OUT_DIR = REPO_ROOT / "results" / "Inspected_histograms"
+OUT_DIR = Path(args.out_dir)
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 with np.load(histo_npz_path) as data:

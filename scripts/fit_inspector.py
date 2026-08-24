@@ -56,4 +56,8 @@ for label in ["neg", "pos", "neg_restrained", "pos_restrained"]:
     xtalk_matrix.load(chn_id, skipped_channels, path=IN_DIR)
     xtalk_matrix.save_csv(path=OUT_DIR)
     xtalk_matrix.plot(path=OUT_DIR)
+    # Only the restrained fits go into the lh5 file; they append into the same
+    # table, so the file ends up with both matrices next to one rawid_index.
+    if label.endswith("_restrained"):
+        xtalk_matrix.save_lh5(chn_id, path=OUT_DIR)
     xtalk_matrix.diagnose()
