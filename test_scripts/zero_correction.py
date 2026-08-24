@@ -36,7 +36,13 @@ for name, m in (("pos_matrix", pos_matrix), ("neg_matrix", neg_matrix)):
 
 abs_pos = np.where(np.isnan(pos_matrix), -np.inf, np.abs(pos_matrix))
 abs_neg = np.where(np.isnan(neg_matrix), -np.inf, np.abs(neg_matrix))
-agg_matrix = np.where(abs_pos >= abs_neg, pos_matrix, neg_matrix)
+
+pos_wins = abs_pos >= abs_neg
+comparison = np.where(pos_wins)
+winning_pairs = list(zip(comparison[0], comparison[1]))
+print(f"Positive matrix wins at indices: {winning_pairs}")
+
+agg_matrix = np.where(pos_wins, pos_matrix, neg_matrix)
 crosstalk_col = np.nan_to_num(agg_matrix[:, detector_index], nan=0.0, posinf=0.0, neginf=0.0) / 100.0
 
 pulser_selection = EventSelector(
@@ -56,7 +62,7 @@ response_selection = EventSelector(
     table_path=f"ch{detector}/hit/",
     files=new_hit_list,
     ene_dataset="cuspEmax_ctc_cal",
-    energy_range=(-10, 50),
+    energy_range=(args["response_min"], args["response_max"]),
     idx=trigger_selection.selected_idxs,
 )
 
@@ -79,7 +85,7 @@ corrected_energy = response_energy + correction
 
 lo = min(response_energy.min(), corrected_energy.min())
 hi = max(response_energy.max(), corrected_energy.max())
-bins = np.linspace(lo, hi, 501)
+bins = np.linspace(lo, hi, args["bins"] + 1)
 
 plt.figure(figsize=(10, 6))
 plt.hist(response_energy, bins=bins, histtype="step", linewidth=1.5,
