@@ -6,39 +6,22 @@ import argparse
 from pathlib import Path
 
 parser = argparse.ArgumentParser()
+parser.add_argument("j1", help="Trigger channel index")
+parser.add_argument("j2", help="Response channel index")
 parser.add_argument(
-    "j1", 
-    help="Trigger channel index"
+    "--label", default="neg", help="neg, pos, neg_restrained, or pos_restrained"
 )
-parser.add_argument(
-    "j2",
-    help="Response channel index"
-)
-parser.add_argument(
-    "--label",
-    default="neg",
-    help="neg, pos, neg_restrained, or pos_restrained"
-)
-parser.add_argument(
-    "--min",
-    help="min for visualized histogram"
-)
-parser.add_argument(
-    "--max",
-    help="max for visualized histogram"
-)
+parser.add_argument("--min", help="min for visualized histogram")
+parser.add_argument("--max", help="max for visualized histogram")
 parser.add_argument(
     "--fit_dir",
     help="directory storing fit parameters",
 )
-parser.add_argument(
-    "--histo_dir",
-    help="directory storing histograms"
-)
+parser.add_argument("--histo_dir", help="directory storing histograms")
 parser.add_argument(
     "--out_dir",
     help="directory to store inspected histograms",
-    default="results/Inspected_histograms"
+    default="results/Inspected_histograms",
 )
 args = parser.parse_args()
 
@@ -48,8 +31,10 @@ label = args.label
 xmin = float(args.min) if args.min is not None else None
 xmax = float(args.max) if args.max is not None else None
 
+
 def gaussian(x, A, mu, sigma):
-    return A * np.exp(-(x - mu)**2 / (2 * sigma**2))
+    return A * np.exp(-((x - mu) ** 2) / (2 * sigma**2))
+
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 FIT_DIR = Path(args.fit_dir)
@@ -90,7 +75,7 @@ elif label == "neg_restrained":
     x = 0.5 * (neg_bins_restrained[1:] + neg_bins_restrained[:-1])
     y = neg_counts_restrained
     bins = neg_bins_restrained
-elif label == "pos":
+elif label == "pos_restrained":
     x = 0.5 * (pos_bins_restrained[1:] + pos_bins_restrained[:-1])
     y = pos_counts_restrained
     bins = pos_bins_restrained
@@ -111,9 +96,9 @@ if not success:
 if xmin is not None or xmax is not None:
     mask_range = np.ones_like(x, dtype=bool)
     if xmin is not None:
-        mask_range &= (x >= xmin)
+        mask_range &= x >= xmin
     if xmax is not None:
-        mask_range &= (x <= xmax)
+        mask_range &= x <= xmax
 
     # Apply mask to histogram values
     x = x[mask_range]
@@ -132,11 +117,10 @@ x_dense = np.linspace(min(x_fit), max(x_fit), 300)
 plt.plot(
     x_dense,
     gaussian(x_dense, A, mu, sigma),
-    'r-',
-    label=f"Fit μ={mu:.3f}, σ={sigma:.3f}"
+    "r-",
+    label=f"Fit μ={mu:.3f}, σ={sigma:.3f}",
 )
 plt.title(f"{label} histogram j1={j1}, j2={j2}")
 plt.legend()
 plt.show()
 plt.savefig(OUT_DIR / f"{label}_histogram_{j1},{j2}.png")
-

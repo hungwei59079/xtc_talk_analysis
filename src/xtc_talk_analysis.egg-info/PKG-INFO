@@ -5,6 +5,7 @@ Summary: Add your description here
 Requires-Python: >=3.9
 Description-Content-Type: text/markdown
 Requires-Dist: dbetto>=1.3.2
+Requires-Dist: hdf5plugin
 Requires-Dist: legend-pydataobj==1.11.6
 Requires-Dist: matplotlib>=3.9.4
 Requires-Dist: numpy>=2.0.2
@@ -19,50 +20,42 @@ Run the followings:
 ```
 git clone https://github.com/hungwei59079/xtc_talk_analysis.git
 cd xtc_talk_analysis
-git checkout v1.0.0
+git checkout v1.1.0
 uv sync
 ```
 To pull the repository and download the necessary packages.
 
 #### Step 1 - Prepare baseline in batch:
-Go to `batch/prepare_baseline_batch.sh` and edit the following lines:
-```
-CONFIG_PATH="configs/xtc_config.json"
-CONFIG_NAME="xtc_old"
-```
-to whatever you would like to use. 
-Currently two configuration `xtc_old` and `xtc_p16` are provided in `xtc_config.json`. 
+Review `configs/jobs_list.json` and ensure jobs and configurations are set to whatever you would like to use. 
+Currently configurations like `xtc_old` and `xtc_p16` are provided in `xtc_config.json`. 
 One could add new configurations by oneself as long as the keys are the same. 
 
 After modifying the parameters, one could run
 ```
-sbatch batch/prepare_baseline_batch.sh
+uv run scripts/submit_jobs.py --step 1
 ```
-to submit the baseline computation jobs to SLURM.
+to submit the baseline computation jobs to SLURM. 
+The temporary results are generated in the `temp_result_loc` mapped out in the job list JSON.
 
 #### Step 2 - Merge Baseline:
 Run:
 ```
-./scripts/merge_baseline.sh
+uv run scripts/submit_jobs.py --step 2
 ```
-to merge independent baseline results into one single set of `.npy` files. 
+to merge independent baseline results into one single set of `.npy` files across all target tasks. 
 The directory storing the individual results will not be removed but instead be renamed with a time string appended to it for reusability.
 
 #### Step 3 - Xtalk Element Computation and Binning:
 Run:
 ```
-sbatch batch/run_xtalk_array_chunk.sh
+uv run scripts/submit_jobs.py --step 3
 ```
-to compute the xtalk elements. They will be filled into the histograms: 
-One with range restrained to be below 5 (for positive baseline) or above -5 (for negative baseline), 
-another with range unrestrained. 
-
-Future fix: The number of bins and the range should not be hard-coded. Should move them to xtc_config.json.
+to submit batch calculations for the xtalk elements. They will be filled into the histograms. Note that in order to remove extreme values, only the data within 3 standard deviation will be filled in.
 
 #### Step 4 - Fitting and Plotting the Xtalk Matrices:
 Run:
 ```
-./scripts/histogram_fitter.sh
+uv run scripts/submit_jobs.py --step 4
 ```
 Gaussian fit will be done on previous histograms and xtalk matrices will be produced after the fitting is complete.
 The results will be stored in `results/`.
