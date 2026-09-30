@@ -56,12 +56,25 @@ new_hit_list, new_dsp_list, chn_id = files_and_chnid(config)
 
 print("file listing complete")
 raw_list = []
+kept_hit_list = []
+missing_raw = []
+
 for path in new_hit_list:
     hit_file = Path(path).name
     raw_file = hit_file.replace("hit", "raw")
-    raw_path = raw_dir + raw_file
-    raw_list.append(raw_path)
+    raw_path = Path(raw_dir) / raw_file
+
+    if raw_path.exists():
+        raw_list.append(str(raw_path))
+        kept_hit_list.append(path)
+    else:
+        missing_raw.append(str(raw_path))
+
+new_hit_list = kept_hit_list
 print("raw data file list construction is complete.")
+print(
+    f"{len(raw_list)} matched, {len(missing_raw)} hit files dropped (no raw file found)."
+)
 
 
 """
