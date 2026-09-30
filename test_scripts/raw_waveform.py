@@ -157,7 +157,7 @@ energy_2 = lh5.read(
     idx=selector.selected_idxs,
 ).nda
 print("response channel energy extraction complete.")
-secondary_selection = energy_2 < 100  # & (energy_2 > -5)
+secondary_selection = energy_2 < 100 & (energy_2 > 50)
 secondary_idxs = selector.selected_idxs[secondary_selection]
 print("secondary selection complete.")
 
@@ -187,7 +187,7 @@ T = 100
 G = 150
 
 for i in range(len(raw_waveform_1)):
-    if i > 5:
+    if i > 15:
         break
     # Extract specific waveforms for this event
     adc_1 = raw_waveform_1[i] - np.full(len(raw_waveform_1[i]), baseline_1[i])
